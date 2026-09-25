@@ -166,6 +166,7 @@ The image ships **no allowlist of its own**.
   gh attestation verify oci://ghcr.io/crowdprobe/agentbox:core --repo crowdprobe/agentbox
   ```
 - **Scanned:** every published image is scanned with Trivy, and the results go to the repository's code-scanning alerts. OpenSSF Scorecard runs weekly.
+- **Release tags come from `main` only.** Pull requests build and test but never publish, and `build.yml` skips publishing when started on any other branch. Only the build of `main` (after a merge, or the daily run) pushes `:<tier>` and the immutable `:<tier>-YYYYMMDD-HHmmss`.
 - **CI hygiene:**
   - Every Action is pinned to a full commit SHA.
   - Workflows start from `permissions: {}`, and each job adds only what it needs.
