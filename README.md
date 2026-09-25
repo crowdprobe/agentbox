@@ -173,6 +173,13 @@ The image ships **no allowlist of its own**.
   - Pull requests build and test but never publish.
   - Publishing builds run without a shared cache.
 
+## Retention
+
+GHCR never expires images on its own, so [`cleanup.yml`](.github/workflows/cleanup.yml) runs weekly.
+- **Kept:** the moving `:<tier>` tags always, plus the newest **90 dated builds per tier**.
+- **Deleted:** older dated builds, untagged versions (superseded `:<tier>` builds), and any signature or attestation whose image no longer exists.
+- **Manual runs** default to a dry run.
+
 ## How updates flow
 
 ```
