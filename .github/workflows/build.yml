@@ -1,6 +1,8 @@
-# Publishes ghcr.io/crowdprobe/agentbox:<target> (latest) and
-# :<target>-YYYYMMDD. Runs after every merge to main (i.e. after a Renovate
-# automerge) and daily, so Debian security updates land without a PR.
+# Publishes ghcr.io/crowdprobe/agentbox:<target> (latest, moving) and
+# :<target>-YYYYMMDD-HHmmss (UTC, unique and never overwritten: the job
+# refuses to push if that tag already exists). Runs after every merge to main
+# (i.e. after a Renovate automerge) and daily, so Debian security updates land
+# without a PR.
 #
 # Built WITHOUT a shared cache and with a fresh base pull, so a publish never
 # reuses layers another workflow could have written.
@@ -72,7 +74,25 @@ jobs:
           flavor: latest=false
           tags: |
             type=raw,value=${{ matrix.target }}
-            type=raw,value=${{ matrix.target }}-{{date 'YYYYMMDD'}}
+            type=raw,value=${{ matrix.target }}-{{date 'YYYYMMDD-HHmmss' tz='UTC'}}
+
+      # Dated tags identify exactly one build. Builds of main are serialized
+      # (concurrency group above) and each target is its own job, so a clash
+      # should be impossible - this makes it a hard failure instead of a
+      # silent overwrite if it ever happens.
+      - name: Refuse to overwrite an existing dated tag
+        env:
+          TAGS: ${{ steps.meta.outputs.tags }}
+          MOVING: ${{ env.IMAGE }}:${{ matrix.target }}
+        run: |
+          while read -r tag; do
+            [[ -z "$tag" || "$tag" == "$MOVING" ]] && continue
+            if docker buildx imagetools inspect "$tag" >/dev/null 2>&1; then
+              echo "::error::$tag already exists - published tags are immutable"
+              exit 1
+            fi
+            echo "$tag is new"
+          done <<< "$TAGS"
 
       # Same builder, same inputs: reuses the layers just built and tested.
       - id: push
