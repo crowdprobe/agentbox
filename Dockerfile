@@ -168,7 +168,7 @@ RUN uv venv /opt/venv \
 # core
 # =============================================================================
 FROM base AS core
-ARG USERNAME=agent
+ARG AGENT_NAME=agent
 ARG USER_UID=1000
 ARG USER_GID=1000
 
@@ -191,9 +191,9 @@ ENV PATH="/opt/agents/bin:${PATH}" \
 
 # Unprivileged by default. The ONLY sudo right is the firewall script, which is
 # root-owned and not writable by the agent user.
-RUN groupadd --gid "$USER_GID" "$USERNAME" \
-    && useradd --uid "$USER_UID" --gid "$USER_GID" -m -s /bin/bash "$USERNAME" \
-    && printf '%s ALL=(root) NOPASSWD: /usr/local/bin/init-firewall.sh\n' "$USERNAME" \
+RUN groupadd --gid "$USER_GID" "$AGENT_NAME" \
+    && useradd --uid "$USER_UID" --gid "$USER_GID" -m -s /bin/bash "$AGENT_NAME" \
+    && printf '%s ALL=(root) NOPASSWD: /usr/local/bin/init-firewall.sh\n' "$AGENT_NAME" \
          > /etc/sudoers.d/init-firewall \
     && chmod 0440 /etc/sudoers.d/init-firewall \
     && chown root:root /usr/local/bin/init-firewall.sh \
@@ -203,14 +203,14 @@ LABEL org.opencontainers.image.source="https://github.com/crowdprobe/agentbox" \
       org.opencontainers.image.licenses="Apache-2.0" \
       org.opencontainers.image.description="agentbox core: Claude Code + opencode with a default-deny egress firewall"
 
-USER $USERNAME
+USER ${USER_UID}:${USER_GID}
 WORKDIR /workspace
 
 # =============================================================================
 # cad
 # =============================================================================
 FROM core AS cad
-USER root
+USER 0
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
          libglu1-mesa libgl1 libegl1 libxi6 libxrender1 libxcursor1 libxrandr2 \
@@ -227,13 +227,13 @@ RUN printf '#!/bin/sh\nexec /opt/openscad-nightly/AppRun "$@"\n' > /usr/local/bi
 ENV PATH="/opt/venv/bin:${PATH}" \
     OPENSCAD=/usr/local/bin/openscad-nightly
 LABEL org.opencontainers.image.description="agentbox cad: core + OpenSCAD nightly + trimesh"
-USER agent
+USER 1000:1000
 
 # =============================================================================
 # ml
 # =============================================================================
 FROM core AS ml
-USER root
+USER 0
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
          openssh-client rsync imagemagick poppler-utils \
@@ -251,13 +251,13 @@ ENV PATH="/opt/venv/bin:/opt/google-cloud-sdk/bin:${PATH}" \
     ARDUINO_DIRECTORIES_USER=/opt/arduino/user \
     ARDUINO_DIRECTORIES_DOWNLOADS=/tmp/arduino-downloads
 LABEL org.opencontainers.image.description="agentbox ml: core + OpenCV/imagehash + gcloud + AVR toolchain"
-USER agent
+USER 1000:1000
 
 # =============================================================================
 # infra
 # =============================================================================
 FROM core AS infra
-USER root
+USER 0
 COPY --from=fetch-gcloud /opt/google-cloud-sdk /opt/google-cloud-sdk
 COPY --from=fetch-tofu /out/tofu /usr/local/bin/tofu
 ENV PATH="/opt/google-cloud-sdk/bin:${PATH}" \
@@ -265,4 +265,4 @@ ENV PATH="/opt/google-cloud-sdk/bin:${PATH}" \
     CLOUDSDK_CORE_DISABLE_USAGE_REPORTING=true \
     CLOUDSDK_COMPONENT_MANAGER_DISABLE_UPDATE_CHECK=true
 LABEL org.opencontainers.image.description="agentbox infra: core + gcloud + OpenTofu"
-USER agent
+USER 1000:1000
