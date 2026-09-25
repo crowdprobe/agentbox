@@ -44,9 +44,8 @@ jobs:
         uses: dataaxiom/ghcr-cleanup-action@d52806a0dc70b430571a37da1fde39733ffd640f # v1.2.2
         with:
           package: agentbox
-          use-regex: true
-          delete-tags: '^core-\d{8}(-\d{6})?$'
-          exclude-tags: '^(core|cad|ml|infra)$'
+          delete-tags: 'core-2*'   # dated builds only: core-YYYYMMDD[-HHmmss]
+          exclude-tags: 'core,cad,ml,infra'
           keep-n-tagged: 90
           dry-run: ${{ env.DRY_RUN }}
 
@@ -54,9 +53,8 @@ jobs:
         uses: dataaxiom/ghcr-cleanup-action@d52806a0dc70b430571a37da1fde39733ffd640f # v1.2.2
         with:
           package: agentbox
-          use-regex: true
-          delete-tags: '^cad-\d{8}(-\d{6})?$'
-          exclude-tags: '^(core|cad|ml|infra)$'
+          delete-tags: 'cad-2*'   # dated builds only: cad-YYYYMMDD[-HHmmss]
+          exclude-tags: 'core,cad,ml,infra'
           keep-n-tagged: 90
           dry-run: ${{ env.DRY_RUN }}
 
@@ -64,9 +62,8 @@ jobs:
         uses: dataaxiom/ghcr-cleanup-action@d52806a0dc70b430571a37da1fde39733ffd640f # v1.2.2
         with:
           package: agentbox
-          use-regex: true
-          delete-tags: '^ml-\d{8}(-\d{6})?$'
-          exclude-tags: '^(core|cad|ml|infra)$'
+          delete-tags: 'ml-2*'   # dated builds only: ml-YYYYMMDD[-HHmmss]
+          exclude-tags: 'core,cad,ml,infra'
           keep-n-tagged: 90
           dry-run: ${{ env.DRY_RUN }}
 
@@ -74,9 +71,8 @@ jobs:
         uses: dataaxiom/ghcr-cleanup-action@d52806a0dc70b430571a37da1fde39733ffd640f # v1.2.2
         with:
           package: agentbox
-          use-regex: true
-          delete-tags: '^infra-\d{8}(-\d{6})?$'
-          exclude-tags: '^(core|cad|ml|infra)$'
+          delete-tags: 'infra-2*'   # dated builds only: infra-YYYYMMDD[-HHmmss]
+          exclude-tags: 'core,cad,ml,infra'
           keep-n-tagged: 90
           dry-run: ${{ env.DRY_RUN }}
 
