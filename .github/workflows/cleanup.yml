@@ -4,9 +4,17 @@
 # AGE-based, not count-based: a dated build (:<tier>-YYYYMMDD[-HHmmss]) is
 # only a deletion candidate once it is older than 90 days, regardless of how
 # many builds have piled up since. The moving :<tier> tags are excluded
-# outright and are never a candidate. Untagged versions (superseded builds)
-# and any signature/attestation/SBOM attached to one get the same 90-day
-# floor, so a build superseded minutes ago is not swept the same day.
+# outright and are never a candidate.
+#
+# Untagged versions and orphaned signatures/attestations are purged on EVERY
+# run, with no age floor. A superseded build is not untagged: it keeps its
+# dated tag when :<tier> moves on, so it falls under the 90-day rule above.
+# What is left untagged is garbage nothing can reach - manifests no tag,
+# index or subject references any more (e.g. the attestation/SBOM children
+# and cosign/provenance referrers of a dated build that was just deleted, or
+# leftovers of an interrupted push). The action (validate: true) never
+# counts children or referrers of a still-tagged image as untagged, and the
+# shared concurrency group keeps a build from pushing while this runs.
 #
 # Needs: this repository has the Admin role on the package
 # (Package settings -> Manage Actions access).
@@ -76,12 +84,11 @@ jobs:
           older-than: 90 days
           dry-run: ${{ env.DRY_RUN }}
 
-      - name: untagged + orphaned signatures/attestations older than 90 days
+      - name: untagged + orphaned signatures/attestations (any age)
         uses: dataaxiom/ghcr-cleanup-action@d52806a0dc70b430571a37da1fde39733ffd640f # v1.2.2
         with:
           package: agentbox
           delete-untagged: true
           delete-orphaned-images: true
-          older-than: 90 days
           validate: true
           dry-run: ${{ env.DRY_RUN }}
