@@ -5,8 +5,8 @@ Each image ships with a default-deny egress firewall and the tooling for one kin
 Images are rebuilt daily and kept current by Renovate, with no manual steps.
 
 ```
-ghcr.io/crowdprobe/agentbox:<tier>            # latest build of that tier
-ghcr.io/crowdprobe/agentbox:<tier>-YYYYMMDD   # a specific day's build, for pinning or rollback
+ghcr.io/crowdprobe/agentbox:<tier>                   # latest build of that tier (moving)
+ghcr.io/crowdprobe/agentbox:<tier>-YYYYMMDD-HHmmss   # one specific build (UTC), never overwritten
 ```
 
 > [!IMPORTANT]
@@ -181,7 +181,7 @@ The image ships **no allowlist of its own**.
            ci.yml: lint + build every tier + smoke test ──► automerge when green
                                  │
                                  ▼
-           build.yml (on merge, and daily at 05:00 UTC) ──► smoke test ──► push :<tier> and :<tier>-YYYYMMDD
+           build.yml (on merge, and daily at 05:00 UTC) ──► smoke test ──► push :<tier> and :<tier>-YYYYMMDD-HHmmss
                                  │                                        ──► sign, attest, scan
                                  ▼
            failure ──► issue labelled build-failure, assigned ──► GitHub emails the assignee

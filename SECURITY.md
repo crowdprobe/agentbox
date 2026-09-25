@@ -25,4 +25,4 @@ Out of scope: vulnerabilities in upstream packages that already have a fix. The 
 
 ## Supported versions
 
-Only the latest build of each tier (`:<tier>`) is supported. Dated tags are kept for rollback and don't receive fixes.
+Only the latest build of each tier (`:<tier>`) is supported. Dated tags (`:<tier>-YYYYMMDD-HHmmss`, one per build, never overwritten) are kept for rollback and don't receive fixes.
