@@ -1,0 +1,2 @@
+FROM debian
+ARG FOO_VERSION=1.2.3

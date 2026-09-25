@@ -1,0 +1,5 @@
+# Allowlist: only these reach the build context.
+*
+!scripts/fetch_verified.sh
+!rootfs/
+!python/

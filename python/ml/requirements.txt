@@ -1,0 +1,11 @@
+# Direct dependencies of the ml target's /opt/venv. Exact pins, bumped by
+# Renovate after the 5-day cool-down; transitive deps are resolved at build
+# time with `uv pip install --exclude-newer <5 days ago>`.
+#
+# FROZEN (excluded from Renovate in renovate.json): opencv-python-headless and
+# imagehash. Downstream duplicate-detection thresholds are calibrated against
+# these exact versions; bump them only together with a re-calibration.
+opencv-python-headless==5.0.0.93
+imagehash==4.3.2
+numpy==2.4.6
+pillow==12.3.0

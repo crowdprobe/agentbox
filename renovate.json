@@ -1,0 +1,64 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "description": "Unattended: every update automerges once CI is green. 5-day cool-down on everything except the two agent CLIs.",
+  "extends": [
+    "config:recommended",
+    "helpers:pinGitHubActionDigests",
+    ":dependencyDashboard",
+    ":semanticCommitsDisabled"
+  ],
+  "timezone": "Etc/UTC",
+  "labels": ["dependencies"],
+  "prConcurrentLimit": 0,
+  "prHourlyLimit": 0,
+  "minimumReleaseAge": "5 days",
+  "internalChecksFilter": "strict",
+  "automerge": true,
+  "automergeType": "pr",
+  "platformAutomerge": true,
+  "rebaseWhen": "behind-base-branch",
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Dockerfile ARGs annotated with `# renovate: datasource=... depName=... [versioning=...]`",
+      "managerFilePatterns": ["/(^|/)Dockerfile$/"],
+      "matchStrings": [
+        "#\\s*renovate:\\s*datasource=(?<datasource>\\S+)\\s+depName=(?<depName>\\S+)(\\s+versioning=(?<versioning>\\S+))?\\n(\\s*#.*\\n)*\\s*ARG\\s+[A-Z0-9_]+=(?<currentValue>\\S+)"
+      ]
+    }
+  ],
+  "customDatasources": {
+    "openscad-snapshots": {
+      "description": "Nightly AppImages; the release date is encoded in the file name and becomes the release timestamp, so the cool-down applies.",
+      "defaultRegistryUrlTemplate": "https://files.openscad.org/snapshots/",
+      "format": "html",
+      "transformTemplates": [
+        "{\"releases\": [releases[$contains(version, /^OpenSCAD-\\d{4}\\.\\d{2}\\.\\d{2}(\\.ai\\d+)?-x86_64\\.AppImage$/)].( $v := $replace($replace(version, \"OpenSCAD-\", \"\"), \"-x86_64.AppImage\", \"\"); {\"version\": $v, \"releaseTimestamp\": $replace($substring($v, 0, 10), \".\", \"-\") & \"T00:00:00Z\"} )]}"
+      ]
+    }
+  },
+  "packageRules": [
+    {
+      "description": "Agent CLIs: no cool-down - take new releases on the next daily run.",
+      "matchPackageNames": ["@anthropic-ai/claude-code", "opencode-ai"],
+      "minimumReleaseAge": null,
+      "groupName": null
+    },
+    {
+      "description": "FROZEN: downstream thresholds are calibrated against these exact versions.",
+      "matchPackageNames": ["opencv-python-headless", "imagehash"],
+      "enabled": false
+    },
+    {
+      "description": "Node: even (LTS) majors only.",
+      "matchPackageNames": ["node"],
+      "matchDatasources": ["node-version"],
+      "allowedVersions": "/^\\d*[02468]\\./"
+    },
+    {
+      "description": "GitHub Actions: one grouped PR.",
+      "matchManagers": ["github-actions"],
+      "groupName": "github-actions"
+    }
+  ]
+}

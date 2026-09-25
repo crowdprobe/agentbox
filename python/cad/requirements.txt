@@ -1,0 +1,5 @@
+# Direct dependencies of the cad target's /opt/venv. Exact pins, bumped by
+# Renovate after the 5-day cool-down. Transitive dependencies are resolved at
+# build time with `uv pip install --exclude-newer <5 days ago>`, so they get
+# the same cool-down; uv verifies every wheel against PyPI's published hash.
+trimesh==5.1.0

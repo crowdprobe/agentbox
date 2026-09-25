@@ -1,0 +1,5 @@
+ignored:
+  # Debian packages are deliberately NOT version-pinned: they come from the
+  # signed trixie + trixie-security repositories, and the daily rebuild must
+  # pick up security fixes without waiting for a Renovate PR (see README).
+  - DL3008

@@ -1,0 +1,95 @@
+# Required status checks for main. Renovate PRs automerge only when every job
+# here is green, so this is the whole gate between an upstream release and a
+# published image.
+name: ci
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Supply-chain rules (no pipe-to-shell, verified downloads, renovate annotations)
+        run: |
+          scripts/lint_downloads.sh Dockerfile
+          for f in tests/fixtures/*.Dockerfile; do
+            if scripts/lint_downloads.sh "$f" >/dev/null; then
+              echo "::error file=$f::lint_downloads.sh accepted a known-bad fixture"; exit 1
+            fi
+          done
+
+      - name: hadolint
+        uses: hadolint/hadolint-action@06be81baf89a55ffd0e24b8f04a4185738dd3387 # v3.5.0
+        with:
+          dockerfile: Dockerfile
+
+      - name: shellcheck
+        run: shellcheck scripts/*.sh rootfs/usr/local/bin/*.sh
+
+      - name: actionlint
+        uses: docker://rhysd/actionlint:1.7.12
+        with:
+          args: -color
+
+      - name: zizmor (workflow security)
+        uses: zizmorcore/zizmor-action@cc914d7f3750a2d13d75c7f184a1060aa0e9d482 # v0.6.4
+        with:
+          advanced-security: false
+
+      - name: gitleaks (full history)
+        uses: docker://zricethezav/gitleaks:v8.30.1
+        with:
+          args: git --redact --verbose /github/workspace
+
+      - name: renovate config
+        uses: docker://ghcr.io/renovatebot/renovate:44.103.6
+        with:
+          entrypoint: renovate-config-validator
+          args: --strict renovate.json
+
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [core, cad, ml, infra]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      - name: Build ${{ matrix.target }} (never pushed from CI)
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          target: ${{ matrix.target }}
+          load: true
+          push: false
+          tags: agentbox:${{ matrix.target }}-ci
+          cache-from: type=gha,scope=${{ matrix.target }}
+
+      - name: Smoke test (tools listed in README.md, security properties)
+        env:
+          TARGET: ${{ matrix.target }}
+        run: |
+          docker run --rm -v "$PWD:/src:ro" "agentbox:${TARGET}-ci" \
+            bash /src/scripts/smoke_test.sh "$TARGET"

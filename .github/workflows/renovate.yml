@@ -1,0 +1,80 @@
+# Self-hosted Renovate, daily, ahead of the 05:00 build. Uses a GitHub App
+# token: PRs and merges made with the default GITHUB_TOKEN would not trigger
+# ci.yml / build.yml, and the automerge flow depends on both.
+#
+# Needs: repository variable RENOVATE_APP_CLIENT_ID and secret
+# RENOVATE_APP_PRIVATE_KEY (the App installed on this repository only).
+name: renovate
+
+on:
+  schedule:
+    - cron: "0 3 * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: renovate
+  cancel-in-progress: false
+
+jobs:
+  renovate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.RENOVATE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.RENOVATE_APP_PRIVATE_KEY }}
+
+      - uses: renovatebot/github-action@dcfba84a42d1b5d5e49bf131b1bf53511851a123 # v46.3.1
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          renovate-version: 44.103.6
+        env:
+          RENOVATE_REPOSITORIES: ${{ github.repository }}
+          RENOVATE_ONBOARDING: "false"
+          RENOVATE_REQUIRE_CONFIG: required
+          RENOVATE_PLATFORM_COMMIT: enabled
+          LOG_LEVEL: info
+
+  notify:
+    needs: renovate
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Open/close the renovate-failure issue (GitHub emails the assignee)
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          RESULT: ${{ needs.renovate.result }}
+          ASSIGNEE: ${{ vars.FAILURE_ASSIGNEE }}
+          WORKFLOW: renovate
+        with:
+          script: |
+            const failed = ['failure', 'cancelled', 'timed_out'].includes(process.env.RESULT);
+            const title = `${process.env.WORKFLOW} workflow failing`;
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const { data: open } = await github.rest.issues.listForRepo({
+              ...context.repo, state: 'open', labels: 'build-failure', per_page: 100 });
+            const existing = open.find(i => i.title === title);
+            if (failed) {
+              const body = `Run ${runUrl} finished with \`${process.env.RESULT}\`.`;
+              if (existing) {
+                await github.rest.issues.createComment({ ...context.repo, issue_number: existing.number, body });
+              } else {
+                await github.rest.issues.create({ ...context.repo, title, body, labels: ['build-failure'],
+                  assignees: process.env.ASSIGNEE ? [process.env.ASSIGNEE] : [] });
+              }
+            } else if (existing) {
+              await github.rest.issues.createComment({ ...context.repo, issue_number: existing.number,
+                body: `Fixed: ${runUrl} succeeded.` });
+              await github.rest.issues.update({ ...context.repo, issue_number: existing.number, state: 'closed' });
+            }
