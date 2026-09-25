@@ -8,7 +8,9 @@
     ":semanticCommitsDisabled"
   ],
   "timezone": "Etc/UTC",
-  "labels": ["dependencies"],
+  "labels": [
+    "dependencies"
+  ],
   "prConcurrentLimit": 0,
   "prHourlyLimit": 0,
   "minimumReleaseAge": "5 days",
@@ -21,7 +23,9 @@
     {
       "customType": "regex",
       "description": "Dockerfile ARGs annotated with `# renovate: datasource=... depName=... [versioning=...]`",
-      "managerFilePatterns": ["/(^|/)Dockerfile$/"],
+      "managerFilePatterns": [
+        "/(^|/)Dockerfile$/"
+      ],
       "matchStrings": [
         "#\\s*renovate:\\s*datasource=(?<datasource>\\S+)\\s+depName=(?<depName>\\S+)(\\s+versioning=(?<versioning>\\S+))?\\n(\\s*#.*\\n)*\\s*ARG\\s+[A-Z0-9_]+=(?<currentValue>\\S+)"
       ]
@@ -40,24 +44,47 @@
   "packageRules": [
     {
       "description": "Agent CLIs: no cool-down - take new releases on the next daily run.",
-      "matchPackageNames": ["@anthropic-ai/claude-code", "opencode-ai"],
+      "matchPackageNames": [
+        "@anthropic-ai/claude-code",
+        "opencode-ai"
+      ],
       "minimumReleaseAge": null,
       "groupName": null
     },
     {
       "description": "FROZEN: downstream thresholds are calibrated against these exact versions.",
-      "matchPackageNames": ["opencv-python-headless", "imagehash"],
+      "matchPackageNames": [
+        "opencv-python-headless",
+        "imagehash"
+      ],
+      "enabled": false
+    },
+    {
+      "description": "uv and gcloud are tracked by their `# renovate:` ARG annotations; stop the dockerfile manager from also resolving the ARG-based FROM lines (duplicate, conflicting PRs).",
+      "matchManagers": [
+        "dockerfile"
+      ],
+      "matchPackageNames": [
+        "ghcr.io/astral-sh/uv",
+        "google/cloud-sdk"
+      ],
       "enabled": false
     },
     {
       "description": "Node: even (LTS) majors only.",
-      "matchPackageNames": ["node"],
-      "matchDatasources": ["node-version"],
+      "matchPackageNames": [
+        "node"
+      ],
+      "matchDatasources": [
+        "node-version"
+      ],
       "allowedVersions": "/^\\d*[02468]\\./"
     },
     {
       "description": "GitHub Actions: one grouped PR.",
-      "matchManagers": ["github-actions"],
+      "matchManagers": [
+        "github-actions"
+      ],
       "groupName": "github-actions"
     }
   ]
