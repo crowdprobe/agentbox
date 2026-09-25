@@ -176,8 +176,9 @@ The image ships **no allowlist of its own**.
 ## Retention
 
 GHCR never expires images on its own, so [`cleanup.yml`](.github/workflows/cleanup.yml) runs weekly. Retention is **age-based**: a version's build count never causes a deletion, only its age does.
-- **Kept:** the moving `:<tier>` tags, always. Any dated build, untagged version (superseded `:<tier>` build), or signature/attestation **younger than 90 days**, however many have piled up.
-- **Deleted:** the same categories once older than 90 days.
+- **Kept:** the moving `:<tier>` tags, always. Any dated build (`:<tier>-YYYYMMDD-HHmmss`, which a superseded `:<tier>` build still carries) **younger than 90 days**, however many have piled up, together with its signature, attestations and SBOM.
+- **Deleted after 90 days:** dated builds, with everything attached to them.
+- **Deleted every run:** untagged versions and orphaned signatures/attestations, i.e. manifests no tag or image references any more.
 - **Manual runs** default to a dry run.
 
 ## How updates flow
