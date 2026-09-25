@@ -1,0 +1,90 @@
+# Registry retention for ghcr.io/crowdprobe/agentbox. GHCR never expires
+# anything on its own.
+#
+# Per tier: keep the newest 90 dated builds (:<tier>-YYYYMMDD-HHmmss, and the
+# older :<tier>-YYYYMMDD form), delete older ones. The moving :<tier> tags are
+# never touched. Then delete untagged versions (superseded :<tier> builds) and
+# stranded signature/attestation artifacts whose image is gone. The action
+# keeps referrers (cosign signatures, provenance, SBOM) of images that still
+# exist.
+#
+# Needs: this repository has the Admin role on the package
+# (Package settings -> Manage Actions access).
+name: cleanup
+
+on:
+  schedule:
+    - cron: "0 4 * * 0"   # Sundays, between Renovate (03:00) and the build (05:00)
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: "Only report what would be deleted"
+        type: boolean
+        default: true
+
+permissions: {}
+
+# The action is not safe to run concurrently against the same package, and a
+# build pushing while it runs could race with untagged-version deletion.
+concurrency:
+  group: build-refs/heads/main
+  cancel-in-progress: false
+
+jobs:
+  retention:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    env:
+      # Scheduled runs delete for real; manual runs default to a dry run.
+      DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry-run || false }}
+    steps:
+      - name: core - keep newest 90 dated builds
+        uses: dataaxiom/ghcr-cleanup-action@d52806a0dc70b430571a37da1fde39733ffd640f # v1.2.2
+        with:
+          package: agentbox
+          use-regex: true
+          delete-tags: '^core-\d{8}(-\d{6})?$'
+          exclude-tags: '^(core|cad|ml|infra)$'
+          keep-n-tagged: 90
+          dry-run: ${{ env.DRY_RUN }}
+
+      - name: cad - keep newest 90 dated builds
+        uses: dataaxiom/ghcr-cleanup-action@d52806a0dc70b430571a37da1fde39733ffd640f # v1.2.2
+        with:
+          package: agentbox
+          use-regex: true
+          delete-tags: '^cad-\d{8}(-\d{6})?$'
+          exclude-tags: '^(core|cad|ml|infra)$'
+          keep-n-tagged: 90
+          dry-run: ${{ env.DRY_RUN }}
+
+      - name: ml - keep newest 90 dated builds
+        uses: dataaxiom/ghcr-cleanup-action@d52806a0dc70b430571a37da1fde39733ffd640f # v1.2.2
+        with:
+          package: agentbox
+          use-regex: true
+          delete-tags: '^ml-\d{8}(-\d{6})?$'
+          exclude-tags: '^(core|cad|ml|infra)$'
+          keep-n-tagged: 90
+          dry-run: ${{ env.DRY_RUN }}
+
+      - name: infra - keep newest 90 dated builds
+        uses: dataaxiom/ghcr-cleanup-action@d52806a0dc70b430571a37da1fde39733ffd640f # v1.2.2
+        with:
+          package: agentbox
+          use-regex: true
+          delete-tags: '^infra-\d{8}(-\d{6})?$'
+          exclude-tags: '^(core|cad|ml|infra)$'
+          keep-n-tagged: 90
+          dry-run: ${{ env.DRY_RUN }}
+
+      - name: untagged + orphaned signatures/attestations
+        uses: dataaxiom/ghcr-cleanup-action@d52806a0dc70b430571a37da1fde39733ffd640f # v1.2.2
+        with:
+          package: agentbox
+          delete-untagged: true
+          delete-orphaned-images: true
+          validate: true
+          dry-run: ${{ env.DRY_RUN }}
