@@ -86,16 +86,29 @@ if env | grep -E 'VERTEX_PROJECT|GOOGLE_CLOUD_PROJECT|CLOUDSDK_CORE_PROJECT|COPI
 else
   ok "no deployment-specific env vars"
 fi
-if [[ "$(stat -c '%U %a' /usr/local/bin/init-firewall.sh)" == "root 755" ]]; then
-  ok "init-firewall.sh root-owned 0755"
+for f in init-firewall.sh agentbox-gh-token; do
+  if [[ "$(stat -c '%U %a' "/usr/local/bin/$f")" == "root 755" ]]; then
+    ok "$f root-owned 0755"
+  else
+    bad "$f must be root-owned 0755"
+  fi
+done
+# With no GitHub App mounted: no token, and git's helper stays out of the way.
+refuse "no GitHub token without a mounted App" agentbox-gh-token
+expect "git uses the GitHub App helper for github.com" \
+  test "$(git config --system --get credential.https://github.com.helper)" = agentbox
+if [[ -z "$(printf 'protocol=https\nhost=github.com\n\n' | git-credential-agentbox get)" ]]; then
+  ok "git credential helper silent without a mounted App"
 else
-  bad "init-firewall.sh must be root-owned 0755"
+  bad "git credential helper answered without a mounted App"
 fi
 # /etc/sudoers.d is not readable by the agent; ask sudo itself (NOPASSWD
 # entries make `sudo -l` password-free).
 rights="$(sudo -n -l 2>/dev/null | sed -n '/may run the following commands/,$p' | tail -n +2 | sed 's/^[[:space:]]*//' | sed '/^$/d')"
-if [[ "$rights" == "(root) NOPASSWD: /usr/local/bin/init-firewall.sh" ]]; then
-  ok "only sudo right is the firewall script"
+expected_rights="(root) NOPASSWD: /usr/local/bin/init-firewall.sh
+(root) NOPASSWD: /usr/local/bin/agentbox-gh-token"
+if [[ "$(sort <<<"$rights")" == "$(sort <<<"$expected_rights")" ]]; then
+  ok "only sudo rights are the firewall script and the GitHub App token helper"
 else
   bad "unexpected sudo rights: ${rights:-<none>}"
 fi

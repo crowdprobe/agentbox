@@ -1,0 +1,102 @@
+#!/usr/bin/env bash
+#
+# agentbox-gh-token - GitHub access as a GitHub App, never as a person.
+#
+#   agentbox-gh-token            print a GitHub App installation token (1 hour)
+#   agentbox-gh-token identity   print "<bot name>\t<bot noreply email>"
+#   agentbox-gh-token setup      set git's user.name/user.email to the bot
+#
+# Reads the App's credentials from a read-only bind mount (nothing is baked
+# into the image):
+#   /run/secrets/agentbox-gh-app/client-id        the App's Client ID
+#   /run/secrets/agentbox-gh-app/private-key.pem  the App's private key
+#   /run/secrets/agentbox-gh-app/owner            optional: org/user to use when
+#                                                  the App has several installations
+#
+# Run as the agent, it re-runs itself through its sudo right. Under rootless
+# Docker the mounted key is owned by the container's root, so the agent can
+# use tokens but can never read the key. If that is not possible (rootful
+# Docker: the key belongs to the agent's uid), it runs as the agent.
+#
+# git (git-credential-agentbox) and gh (/usr/local/bin/gh) call this on
+# demand; tokens are cached until 10 minutes before they expire.
+set -euo pipefail
+
+SECRETS=/run/secrets/agentbox-gh-app
+API=https://api.github.com
+SELF=/usr/local/bin/agentbox-gh-token
+
+mode="${1:-token}"
+case "$mode" in
+  token|identity|setup) ;;
+  *) echo "usage: agentbox-gh-token [token|identity|setup]" >&2; exit 2 ;;
+esac
+
+if [[ "$mode" == setup ]]; then
+  [[ $EUID -ne 0 ]] || { echo "agentbox-gh-token: run setup as the agent user" >&2; exit 1; }
+  id="$("$SELF" identity)"
+  git config --global user.name "${id%%$'\t'*}"
+  git config --global user.email "${id#*$'\t'}"
+  echo "git identity: ${id%%$'\t'*} <${id#*$'\t'}>"
+  exit 0
+fi
+
+if [[ $EUID -ne 0 && -z "${AGENTBOX_GH_TOKEN_NO_SUDO:-}" ]]; then
+  if sudo -n "$SELF" "$mode" 2>/dev/null; then exit 0; fi
+  export AGENTBOX_GH_TOKEN_NO_SUDO=1
+fi
+
+if [[ ! -r "$SECRETS/client-id" || ! -r "$SECRETS/private-key.pem" ]]; then
+  echo "agentbox-gh-token: no GitHub App mounted at $SECRETS (client-id, private-key.pem)" >&2
+  exit 1
+fi
+
+umask 077
+if [[ $EUID -eq 0 ]]; then cache=/run/agentbox-gh; else cache="/tmp/agentbox-gh-$EUID"; fi
+mkdir -p "$cache"
+[[ -O "$cache" ]] || { echo "agentbox-gh-token: $cache is not ours" >&2; exit 1; }
+
+curl_opts=(--fail --silent --show-error --proto '=https' --tlsv1.2 --retry 2
+           -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28")
+
+jwt() {
+  local client_id now h p s
+  client_id="$(tr -d '[:space:]' < "$SECRETS/client-id")"
+  [[ "$client_id" =~ ^[A-Za-z0-9.]+$ ]] || { echo "agentbox-gh-token: bad client-id" >&2; exit 1; }
+  b64() { openssl base64 -A | tr '+/' '-_' | tr -d '='; }
+  now="$(date +%s)"
+  h="$(printf '{"alg":"RS256","typ":"JWT"}' | b64)"
+  p="$(printf '{"iat":%d,"exp":%d,"iss":"%s"}' $((now - 60)) $((now + 540)) "$client_id" | b64)"
+  s="$(printf '%s.%s' "$h" "$p" | openssl dgst -sha256 -sign "$SECRETS/private-key.pem" | b64)"
+  printf '%s.%s.%s' "$h" "$p" "$s"
+}
+
+token() {
+  local now expires jwt_ owner installation
+  now="$(date +%s)"
+  if [[ -s "$cache/token.json" ]]; then
+    expires="$(jq -r '.expires_at | fromdateiso8601' "$cache/token.json" 2>/dev/null || echo 0)"
+    if (( expires - now > 600 )); then jq -r .token "$cache/token.json"; return; fi
+  fi
+  jwt_="$(jwt)"
+  owner=""
+  [[ -r "$SECRETS/owner" ]] && owner="$(tr -d '[:space:]' < "$SECRETS/owner")"
+  installation="$(curl "${curl_opts[@]}" -H "Authorization: Bearer $jwt_" "$API/app/installations" \
+    | jq -r --arg o "$owner" '
+        if $o != "" then [.[] | select(.account.login == $o)] else . end
+        | if length == 1 then .[0].id else error("need exactly one installation, found \(length); set owner") end')"
+  curl "${curl_opts[@]}" -X POST -H "Authorization: Bearer $jwt_" \
+    "$API/app/installations/$installation/access_tokens" \
+    | jq '{token, expires_at}' > "$cache/token.json.tmp"
+  mv "$cache/token.json.tmp" "$cache/token.json"
+  jq -r .token "$cache/token.json"
+}
+
+case "$mode" in
+  token) token ;;
+  identity)
+    slug="$(curl "${curl_opts[@]}" -H "Authorization: Bearer $(jwt)" "$API/app" | jq -r .slug)"
+    bot_id="$(curl "${curl_opts[@]}" -H "Authorization: Bearer $(token)" "$API/users/${slug}%5Bbot%5D" | jq -r .id)"
+    printf '%s[bot]\t%s+%s[bot]@users.noreply.github.com\n' "$slug" "$bot_id" "$slug"
+    ;;
+esac
