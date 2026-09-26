@@ -185,13 +185,13 @@ GHCR never expires images on its own, so [`cleanup.yml`](.github/workflows/clean
 ## How updates flow
 
 ```
-03:00 UTC  Renovate (daily) ──► PR per update (after the 5-day cool-down; Claude Code/opencode immediately)
+03:17 UTC  Renovate (daily) ──► PR per update (after the 5-day cool-down; Claude Code/opencode immediately)
                                  │
                                  ▼
            ci.yml: lint + build every tier + smoke test ──► automerge when green
                                  │
                                  ▼
-           build.yml (on merge, and daily at 05:00 UTC) ──► smoke test ──► push :<tier> and :<tier>-YYYYMMDD-HHmmss
+           build.yml (on merge, and daily at 05:37 UTC) ──► smoke test ──► push :<tier> and :<tier>-YYYYMMDD-HHmmss
                                  │                                        ──► sign, attest, scan
                                  ▼
            failure ──► issue labelled build-failure, assigned ──► GitHub emails the assignee
