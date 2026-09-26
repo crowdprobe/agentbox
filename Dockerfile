@@ -5,7 +5,7 @@
 # One multistage Dockerfile, four published targets:
 #   core   agent CLIs, git, the egress firewall - what every tier needs
 #   cad    core + OpenSCAD (nightly) + trimesh
-#   ml     core + OpenCV/imagehash + gcloud + image/PDF tools + AVR toolchain
+#   ml     core + OpenCV/imagehash/onnxruntime + gcloud + image/PDF tools + AVR toolchain
 #   infra  core + gcloud + OpenTofu
 #
 # Supply-chain rules (enforced by scripts/lint_downloads.sh in CI):
@@ -162,7 +162,7 @@ RUN uv venv /opt/venv \
     && uv pip install --python /opt/venv/bin/python \
          --exclude-newer "$(date -u -d '5 days ago' +%Y-%m-%dT%H:%M:%SZ)" \
          -r /tmp/requirements.txt \
-    && /opt/venv/bin/python -c "import cv2, imagehash, numpy, PIL; print('ml venv OK')"
+    && /opt/venv/bin/python -c "import cv2, imagehash, numpy, PIL, onnxruntime; print('ml venv OK')"
 
 # =============================================================================
 # core
@@ -250,7 +250,7 @@ ENV PATH="/opt/venv/bin:/opt/google-cloud-sdk/bin:${PATH}" \
     ARDUINO_DIRECTORIES_DATA=/opt/arduino/data \
     ARDUINO_DIRECTORIES_USER=/opt/arduino/user \
     ARDUINO_DIRECTORIES_DOWNLOADS=/tmp/arduino-downloads
-LABEL org.opencontainers.image.description="agentbox ml: core + OpenCV/imagehash + gcloud + AVR toolchain"
+LABEL org.opencontainers.image.description="agentbox ml: core + OpenCV/imagehash/onnxruntime + gcloud + AVR toolchain"
 USER 1000:1000
 
 # =============================================================================

@@ -74,7 +74,7 @@ and CI fails if a listed tool is missing.
 ### `ml`: dataset tooling, cloud training driver and AVR firmware (core + ...)
 
 There is **no local training stack**: no PyTorch and no ultralytics.
-Training is expected to run on cloud GPUs, and inference goes through OpenCV's `cv2.dnn` with ONNX models.
+Training is expected to run on cloud GPUs; ONNX models run on the CPU, through ONNX Runtime or OpenCV's `cv2.dnn`.
 
 <!-- tools:ml -->
 | check | what | source / verification |
@@ -83,6 +83,7 @@ Training is expected to run on cloud GPUs, and inference goes through OpenCV's `
 | `import imagehash` | perceptual hashing | PyPI, hash-checked by uv; **frozen version** |
 | `import numpy` | NumPy | PyPI, hash-checked by uv |
 | `import PIL` | Pillow | PyPI, hash-checked by uv |
+| `import onnxruntime` | ONNX Runtime (CPU) | PyPI, hash-checked by uv |
 | `gcloud` | Google Cloud CLI | `google/cloud-sdk` image, content-addressed pull |
 | `gsutil` | Cloud Storage CLI | as above |
 | `ssh` | OpenSSH client | Debian trixie |

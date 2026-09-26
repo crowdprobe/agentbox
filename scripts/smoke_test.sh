@@ -106,7 +106,7 @@ node --version; claude --version; opencode --version; uv --version; git --versio
 case "$target" in
   cad)   openscad-nightly --version 2>&1 | head -1; python3 -c 'import trimesh; print("trimesh", trimesh.__version__)' ;;
   ml)    gcloud version 2>/dev/null | head -1; arduino-cli version
-         python3 -c 'import cv2, imagehash, numpy; print("opencv", cv2.__version__, "imagehash", imagehash.__version__, "numpy", numpy.__version__)' ;;
+         python3 -c 'import cv2, imagehash, numpy, onnxruntime; print("opencv", cv2.__version__, "imagehash", imagehash.__version__, "numpy", numpy.__version__, "onnxruntime", onnxruntime.__version__)' ;;
   infra) gcloud version 2>/dev/null | head -1; tofu version | head -1 ;;
 esac
 
