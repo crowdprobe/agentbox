@@ -42,7 +42,7 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends \
          ca-certificates curl git jq make ripgrep bc less procps openssl \
          python3 \
-         iptables ipset dnsmasq-base iproute2 bind9-dnsutils sudo \
+         iptables ipset dnsmasq-base iproute2 bind9-dnsutils sudo iputils-ping \
     && rm -rf /var/lib/apt/lists/*
 
 # =============================================================================

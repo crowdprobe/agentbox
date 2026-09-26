@@ -57,6 +57,7 @@ and CI fails if a listed tool is missing.
 | `dnsmasq` | resolver that keeps the firewall's address set current | Debian trixie |
 | `dig` | DNS lookup | Debian trixie |
 | `ip` | iproute2 | Debian trixie |
+| `ping` | iputils-ping | Debian trixie |
 | `sudo` | used **only** for `init-firewall.sh` and `agentbox-gh-token` | Debian trixie |
 | `openssl` | signs the GitHub App JWT | Debian trixie |
 | `init-firewall.sh` | default-deny egress, see below | this repo |
