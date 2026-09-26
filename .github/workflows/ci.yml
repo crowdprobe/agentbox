@@ -93,3 +93,20 @@ jobs:
         run: |
           docker run --rm -v "$PWD:/src:ro" "agentbox:${TARGET}-ci" \
             bash /src/scripts/smoke_test.sh "$TARGET"
+
+      # With exactly the capabilities README.md documents: the firewall comes
+      # up (it self-checks allowed vs blocked egress) and sudo reaches the
+      # GitHub App helper (no App mounted, so that is its error, not sudo's).
+      - name: Firewall and sudo under the documented capabilities
+        env:
+          TARGET: ${{ matrix.target }}
+        run: |
+          docker run --rm \
+            --cap-drop=ALL --cap-add=NET_ADMIN --cap-add=NET_RAW \
+            --cap-add=SETUID --cap-add=SETGID --cap-add=AUDIT_WRITE \
+            "agentbox:${TARGET}-ci" bash -c '
+              set -euo pipefail
+              sudo -n init-firewall.sh "github.com"
+              out="$(sudo -n /usr/local/bin/agentbox-gh-token 2>&1 || true)"
+              echo "$out"
+              grep -q "no GitHub App mounted" <<<"$out"'
