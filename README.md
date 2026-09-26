@@ -12,7 +12,9 @@ ghcr.io/crowdprobe/agentbox:<tier>-YYYYMMDD-HHmmss   # one specific build (UTC),
 > [!IMPORTANT]
 > **Run agentbox under [rootless Docker](https://docs.docker.com/engine/security/rootless/). This is highly recommended.**
 >
-> The egress firewall needs `NET_ADMIN` and `NET_RAW`. Under rootless Docker, those
+> The egress firewall needs `NET_ADMIN` and `NET_RAW`, and `sudo` needs `SETUID` and `SETGID` to switch
+> to root (plus `AUDIT_WRITE` to log the command without an error). The agent user holds none of them itself:
+> only root, which it reaches solely through its two sudo rights. Under rootless Docker, those
 > capabilities, and the container's `root`, exist only inside a user namespace
 > owned by your unprivileged user. A container escape therefore lands as that
 > user, not as host root.
@@ -123,6 +125,7 @@ Training is expected to run on cloud GPUs; ONNX models run on the CPU, through O
 ```sh
 docker run --rm -it \
   --cap-drop=ALL --cap-add=NET_ADMIN --cap-add=NET_RAW \
+  --cap-add=SETUID --cap-add=SETGID --cap-add=AUDIT_WRITE \
   -v "$PWD:/workspace" \
   ghcr.io/crowdprobe/agentbox:core \
   bash -c 'sudo init-firewall.sh "api.anthropic.com,github.com" && claude'
@@ -133,7 +136,8 @@ As a devcontainer (`.devcontainer/devcontainer.json`):
 ```jsonc
 {
   "image": "ghcr.io/crowdprobe/agentbox:cad",
-  "runArgs": ["--cap-drop=ALL", "--cap-add=NET_ADMIN", "--cap-add=NET_RAW"],
+  "runArgs": ["--cap-drop=ALL", "--cap-add=NET_ADMIN", "--cap-add=NET_RAW",
+              "--cap-add=SETUID", "--cap-add=SETGID", "--cap-add=AUDIT_WRITE"],
   "containerEnv": { "ALLOWED_DOMAINS": "api.anthropic.com,github.com" },
   "postStartCommand": "sudo -n /usr/local/bin/init-firewall.sh \"$ALLOWED_DOMAINS\""
 }
@@ -168,6 +172,7 @@ echo '<client ID, Iv23...>' > "$D/client-id"
 ```sh
 docker run --rm -it \
   --cap-drop=ALL --cap-add=NET_ADMIN --cap-add=NET_RAW \
+  --cap-add=SETUID --cap-add=SETGID --cap-add=AUDIT_WRITE \
   -v "$PWD:/workspace" \
   -v "$HOME/.config/agentbox/gh-app:/run/secrets/agentbox-gh-app:ro" \
   ghcr.io/crowdprobe/agentbox:core \
@@ -177,7 +182,8 @@ docker run --rm -it \
 ```jsonc
 {
   "image": "ghcr.io/crowdprobe/agentbox:cad",
-  "runArgs": ["--cap-drop=ALL", "--cap-add=NET_ADMIN", "--cap-add=NET_RAW"],
+  "runArgs": ["--cap-drop=ALL", "--cap-add=NET_ADMIN", "--cap-add=NET_RAW",
+              "--cap-add=SETUID", "--cap-add=SETGID", "--cap-add=AUDIT_WRITE"],
   "mounts": ["source=${localEnv:HOME}/.config/agentbox/gh-app,target=/run/secrets/agentbox-gh-app,type=bind,readonly"],
   "containerEnv": { "ALLOWED_DOMAINS": "api.anthropic.com,github.com,api.github.com" },
   "postStartCommand": "sudo -n /usr/local/bin/init-firewall.sh \"$ALLOWED_DOMAINS\" && agentbox-gh-token setup"
