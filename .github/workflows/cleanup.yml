@@ -22,7 +22,7 @@ name: cleanup
 
 on:
   schedule:
-    - cron: "0 4 * * 0"   # Sundays, between Renovate (03:00) and the build (05:00)
+    - cron: "13 4 * * 0"  # Sundays, between Renovate (03:17) and the build (05:37)
   workflow_dispatch:
     inputs:
       dry-run:
