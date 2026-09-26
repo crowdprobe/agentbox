@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+#
+# gh, authenticated as the mounted GitHub App (see agentbox-gh-token) unless
+# GH_TOKEN/GITHUB_TOKEN is already set.
+if [[ -z "${GH_TOKEN:-}${GITHUB_TOKEN:-}" && -e /run/secrets/agentbox-gh-app ]]; then
+  GH_TOKEN="$(agentbox-gh-token)" || exit 1
+  export GH_TOKEN
+fi
+exec /opt/gh/bin/gh "$@"

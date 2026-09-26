@@ -44,6 +44,7 @@ and CI fails if a listed tool is missing.
 | `uv` | Python package and venv manager | `ghcr.io/astral-sh/uv` image |
 | `python3` | Debian's Python 3 | Debian trixie |
 | `git` | git | Debian trixie |
+| `gh` | GitHub CLI (PRs, CI status, reviews), authenticated as the mounted GitHub App | GitHub release checked against `checksums.txt` |
 | `curl` | curl | Debian trixie |
 | `jq` | jq | Debian trixie |
 | `rg` | ripgrep | Debian trixie |
@@ -54,9 +55,12 @@ and CI fails if a listed tool is missing.
 | `dnsmasq` | resolver that keeps the firewall's address set current | Debian trixie |
 | `dig` | DNS lookup | Debian trixie |
 | `ip` | iproute2 | Debian trixie |
-| `sudo` | used **only** for `init-firewall.sh` | Debian trixie |
+| `sudo` | used **only** for `init-firewall.sh` and `agentbox-gh-token` | Debian trixie |
+| `openssl` | signs the GitHub App JWT | Debian trixie |
 | `init-firewall.sh` | default-deny egress, see below | this repo |
 | `ensure-claude-plugin-marketplace.sh` | registers the official Claude Code plugin marketplace | this repo |
+| `agentbox-gh-token` | GitHub App installation token for git and `gh`, see below | this repo |
+| `git-credential-agentbox` | git credential helper for `https://github.com`, enabled system-wide | this repo |
 <!-- /tools:core -->
 
 ### `cad`: 3D modelling (core + ...)
@@ -136,8 +140,57 @@ As a devcontainer (`.devcontainer/devcontainer.json`):
 ```
 
 Pass credentials at run time through bind mounts or environment variables. The images never contain any.
+For GitHub, mount a GitHub App instead of a personal token; see [GitHub access](#github-access-as-a-github-app).
 Running the container as `root` (for example with `remoteUser: root`) works, but it is not recommended.
 The `agent` user is the default for a reason.
+
+## GitHub access as a GitHub App
+
+Agents push branches and open pull requests as a **GitHub App** (for example `your-org-coding-agents[bot]`), never as you.
+Their PRs then show up as the bot's, and you review and approve them like anyone else's:
+GitHub never lets the author or the last pusher approve their own PR.
+
+**One-time setup, on the host.** Create a GitHub App with *Contents: read and write*, *Pull requests: read and write*
+and read-only *Actions*, *Checks* and *Commit statuses* (no Workflows, no Administration), install it on your
+repositories, and generate a private key. Then keep the App's two files in one directory:
+
+```sh
+D=~/.config/agentbox/gh-app
+mkdir -p "$D" && chmod 700 "$D"
+mv ~/Downloads/<app-name>.*.private-key.pem "$D/private-key.pem" && chmod 600 "$D/private-key.pem"
+echo '<client ID, Iv23...>' > "$D/client-id"
+# only if the App is installed on more than one org/user:
+# echo '<org>' > "$D/owner"
+```
+
+**Mount it read-only** at `/run/secrets/agentbox-gh-app` and allow GitHub through the firewall:
+
+```sh
+docker run --rm -it \
+  --cap-drop=ALL --cap-add=NET_ADMIN --cap-add=NET_RAW \
+  -v "$PWD:/workspace" \
+  -v "$HOME/.config/agentbox/gh-app:/run/secrets/agentbox-gh-app:ro" \
+  ghcr.io/crowdprobe/agentbox:core \
+  bash -c 'sudo init-firewall.sh "api.anthropic.com,github.com,api.github.com" && agentbox-gh-token setup && claude'
+```
+
+```jsonc
+{
+  "image": "ghcr.io/crowdprobe/agentbox:cad",
+  "runArgs": ["--cap-drop=ALL", "--cap-add=NET_ADMIN", "--cap-add=NET_RAW"],
+  "mounts": ["source=${localEnv:HOME}/.config/agentbox/gh-app,target=/run/secrets/agentbox-gh-app,type=bind,readonly"],
+  "containerEnv": { "ALLOWED_DOMAINS": "api.anthropic.com,github.com,api.github.com" },
+  "postStartCommand": "sudo -n /usr/local/bin/init-firewall.sh \"$ALLOWED_DOMAINS\" && agentbox-gh-token setup"
+}
+```
+
+Inside the container:
+
+- **gh** (PRs, CI results, review comments) uses the same token, unless `GH_TOKEN` is already set.
+- **git** fetches and pushes to `https://github.com` with an installation token. `git-credential-agentbox` asks `agentbox-gh-token` for one on demand; tokens last an hour and are refreshed automatically.
+- **Commits** are authored by the bot: `agentbox-gh-token setup` sets `user.name` and `user.email` to the App's bot account. Agents still name themselves and their model in `Co-Authored-By:` trailers.
+- **The key stays out of the agent's reach under rootless Docker.** The mounted files belong to the container's root, and the agent gets tokens only through its sudo right to `agentbox-gh-token`, never the key itself. Under rootful Docker the files belong to the agent's uid, so the agent could read the key.
+- Without the mount nothing changes: the helper stays silent and git falls back to whatever else is configured.
 
 ## Egress firewall
 

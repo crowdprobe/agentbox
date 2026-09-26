@@ -40,7 +40,7 @@ ARG DEBIAN_FRONTEND=noninteractive
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-         ca-certificates curl git jq make ripgrep bc less procps \
+         ca-certificates curl git jq make ripgrep bc less procps openssl \
          python3 \
          iptables ipset dnsmasq-base iproute2 bind9-dnsutils sudo \
     && rm -rf /var/lib/apt/lists/*
@@ -81,6 +81,17 @@ WORKDIR /tmp
 RUN ./openscad.AppImage --appimage-extract >/dev/null \
     && mv /tmp/squashfs-root /out-openscad \
     && rm /tmp/openscad.AppImage
+
+FROM fetch AS fetch-gh
+# renovate: datasource=github-releases depName=cli/cli
+ARG GH_VERSION=2.101.0
+RUN base="https://github.com/cli/cli/releases/download/v${GH_VERSION}" \
+    && fetch_verified "${base}/gh_${GH_VERSION}_linux_amd64.tar.gz" \
+         "${base}/gh_${GH_VERSION}_checksums.txt" /tmp/gh.tar.gz \
+    && mkdir -p /out/gh/bin \
+    && tar -xzf /tmp/gh.tar.gz -C /out/gh/bin --strip-components=2 \
+         "gh_${GH_VERSION}_linux_amd64/bin/gh" \
+    && rm /tmp/gh.tar.gz
 
 FROM fetch AS fetch-tofu
 # renovate: datasource=github-releases depName=opentofu/opentofu
@@ -175,6 +186,7 @@ ARG USER_GID=1000
 COPY --from=fetch-node /out/node/bin/node /usr/local/bin/node
 COPY --from=agent-clis /opt/agents /opt/agents
 COPY --from=uv /uv /usr/local/bin/uv
+COPY --from=fetch-gh /out/gh /opt/gh
 COPY --chmod=0755 rootfs/usr/local/bin/ /usr/local/bin/
 
 # The agent CLIs must not update themselves: that is a guaranteed-failing
@@ -187,16 +199,23 @@ ENV PATH="/opt/agents/bin:${PATH}" \
     npm_config_registry=http://127.0.0.1:1/ \
     npm_config_offline=true \
     BUN_CONFIG_REGISTRY=http://127.0.0.1:1/ \
-    UV_PYTHON_DOWNLOADS=never
+    UV_PYTHON_DOWNLOADS=never \
+    GH_NO_UPDATE_NOTIFIER=1 \
+    GH_PROMPT_DISABLED=1
 
-# Unprivileged by default. The ONLY sudo right is the firewall script, which is
-# root-owned and not writable by the agent user.
+# Unprivileged by default. The ONLY sudo rights are the firewall script and the
+# GitHub App token helper (it reads a key the agent itself cannot read), both
+# root-owned and not writable by the agent user. git uses the token helper for
+# https://github.com when a GitHub App is mounted, and stays silent otherwise.
 RUN groupadd --gid "$USER_GID" "$AGENT_NAME" \
     && useradd --uid "$USER_UID" --gid "$USER_GID" -m -s /bin/bash "$AGENT_NAME" \
     && printf '%s ALL=(root) NOPASSWD: /usr/local/bin/init-firewall.sh\n' "$AGENT_NAME" \
          > /etc/sudoers.d/init-firewall \
-    && chmod 0440 /etc/sudoers.d/init-firewall \
-    && chown root:root /usr/local/bin/init-firewall.sh \
+    && printf '%s ALL=(root) NOPASSWD: /usr/local/bin/agentbox-gh-token\n' "$AGENT_NAME" \
+         > /etc/sudoers.d/agentbox-gh-token \
+    && chmod 0440 /etc/sudoers.d/init-firewall /etc/sudoers.d/agentbox-gh-token \
+    && chown root:root /usr/local/bin/init-firewall.sh /usr/local/bin/agentbox-gh-token \
+    && git config --system credential.https://github.com.helper agentbox \
     && mkdir -p /workspace && chown "$USER_UID:$USER_GID" /workspace
 
 LABEL org.opencontainers.image.source="https://github.com/crowdprobe/agentbox" \
