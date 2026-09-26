@@ -59,6 +59,7 @@ refuse() { local d="$1"; shift; if "$@" >/dev/null 2>&1; then bad "$d"; else ok 
 # Tools must actually run, not just exist.
 expect "claude runs" claude --version
 expect "opencode runs" opencode --version
+expect "gh runs" gh --version
 case "$target" in
   cad)   expect "openscad-nightly runs" openscad-nightly --version ;;
   ml)    expect "gcloud runs" gcloud version
@@ -115,7 +116,7 @@ fi
 
 echo
 echo "--- versions ($target) ---"
-node --version; claude --version; opencode --version; uv --version; git --version | head -1
+node --version; claude --version; opencode --version; uv --version; git --version | head -1; gh --version | head -1
 case "$target" in
   cad)   openscad-nightly --version 2>&1 | head -1; python3 -c 'import trimesh; print("trimesh", trimesh.__version__)' ;;
   ml)    gcloud version 2>/dev/null | head -1; arduino-cli version

@@ -44,6 +44,7 @@ and CI fails if a listed tool is missing.
 | `uv` | Python package and venv manager | `ghcr.io/astral-sh/uv` image |
 | `python3` | Debian's Python 3 | Debian trixie |
 | `git` | git | Debian trixie |
+| `gh` | GitHub CLI (PRs, CI status, reviews), authenticated as the mounted GitHub App | GitHub release checked against `checksums.txt` |
 | `curl` | curl | Debian trixie |
 | `jq` | jq | Debian trixie |
 | `rg` | ripgrep | Debian trixie |
@@ -58,7 +59,7 @@ and CI fails if a listed tool is missing.
 | `openssl` | signs the GitHub App JWT | Debian trixie |
 | `init-firewall.sh` | default-deny egress, see below | this repo |
 | `ensure-claude-plugin-marketplace.sh` | registers the official Claude Code plugin marketplace | this repo |
-| `agentbox-gh-token` | GitHub App installation token for git (and `gh`), see below | this repo |
+| `agentbox-gh-token` | GitHub App installation token for git and `gh`, see below | this repo |
 | `git-credential-agentbox` | git credential helper for `https://github.com`, enabled system-wide | this repo |
 <!-- /tools:core -->
 
@@ -185,6 +186,7 @@ docker run --rm -it \
 
 Inside the container:
 
+- **gh** (PRs, CI results, review comments) uses the same token, unless `GH_TOKEN` is already set.
 - **git** fetches and pushes to `https://github.com` with an installation token. `git-credential-agentbox` asks `agentbox-gh-token` for one on demand; tokens last an hour and are refreshed automatically.
 - **Commits** are authored by the bot: `agentbox-gh-token setup` sets `user.name` and `user.email` to the App's bot account. Agents still name themselves and their model in `Co-Authored-By:` trailers.
 - **The key stays out of the agent's reach under rootless Docker.** The mounted files belong to the container's root, and the agent gets tokens only through its sudo right to `agentbox-gh-token`, never the key itself. Under rootful Docker the files belong to the agent's uid, so the agent could read the key.
