@@ -7,6 +7,6 @@
 # these exact versions; bump them only together with a re-calibration.
 opencv-python-headless==5.0.0.93
 imagehash==4.3.2
-numpy==2.4.6
+numpy==2.5.3
 pillow==12.3.0
 onnxruntime==1.30.0
