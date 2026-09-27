@@ -73,7 +73,7 @@ FROM fetch AS fetch-openscad
 # Nightly on purpose: its manifold backend renders in ~1s where the 2021.01
 # release takes minutes. The AppImage is EXTRACTED (no FUSE, no privileges).
 # renovate: datasource=custom.openscad-snapshots depName=openscad-nightly versioning=regex:^(?<major>\d{4})\.(?<minor>\d{2})\.(?<patch>\d{2})(\.ai(?<build>\d+))?$
-ARG OPENSCAD_VERSION=2026.01.02.ai30348
+ARG OPENSCAD_VERSION=2026.09.22
 RUN url="https://files.openscad.org/snapshots/OpenSCAD-${OPENSCAD_VERSION}-x86_64.AppImage" \
     && fetch_verified "$url" "${url}.sha256" /tmp/openscad.AppImage \
     && chmod +x /tmp/openscad.AppImage
