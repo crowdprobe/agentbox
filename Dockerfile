@@ -24,7 +24,7 @@
 ARG BASE_IMAGE=debian:trixie-slim
 
 # renovate: datasource=github-releases depName=astral-sh/uv
-ARG UV_VERSION=0.12.17
+ARG UV_VERSION=0.12.19
 # renovate: datasource=docker depName=google/cloud-sdk versioning=regex:^(?<major>\d+)\.(?<minor>\d+)\.(?<patch>\d+)$
 ARG GCLOUD_VERSION=586.0.0
 
