@@ -54,7 +54,8 @@ jobs:
           RENOVATE_ONBOARDING: "false"
           RENOVATE_REQUIRE_CONFIG: required
           RENOVATE_PLATFORM_COMMIT: enabled
-          LOG_LEVEL: info
+          LOG_LEVEL: debug
+          RENOVATE_DRY_RUN: lookup
 
   notify:
     needs: renovate
