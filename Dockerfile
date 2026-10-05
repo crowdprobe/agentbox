@@ -78,8 +78,11 @@ RUN url="https://files.openscad.org/snapshots/OpenSCAD-${OPENSCAD_VERSION}-x86_6
     && fetch_verified "$url" "${url}.sha256" /tmp/openscad.AppImage \
     && chmod +x /tmp/openscad.AppImage
 WORKDIR /tmp
+# Some nightlies extract root-only directories (0700). The runtime agent needs
+# read/traverse access; X preserves which regular files are executable.
 RUN ./openscad.AppImage --appimage-extract >/dev/null \
     && mv /tmp/squashfs-root /out-openscad \
+    && chmod -R a+rX /out-openscad \
     && rm /tmp/openscad.AppImage
 
 FROM fetch AS fetch-gh
