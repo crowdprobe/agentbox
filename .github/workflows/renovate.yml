@@ -4,6 +4,9 @@
 #
 # Needs: repository variable RENOVATE_APP_CLIENT_ID and secret
 # RENOVATE_APP_PRIVATE_KEY (the App installed on this repository only).
+# Optional secret RENOVATE_PUBLIC_GITHUB_TOKEN: a dedicated user token with only
+# public-repository read access, for upstream tag/release lookups whose IP
+# allowlists reject installation tokens. Falls back to the App token if unset.
 # The App itself must be granted every permission requested below (incl.
 # Commit statuses: read and write), or the token step fails.
 name: renovate
@@ -54,13 +57,12 @@ jobs:
           RENOVATE_ONBOARDING: "false"
           RENOVATE_REQUIRE_CONFIG: required
           RENOVATE_PLATFORM_COMMIT: enabled
-          # Aqua's IP allowlist rejects the App token for public metadata lookups.
-          # Use the read-only runner token for datasources; keep App auth for writes.
+          # Aqua's IP allowlist rejects installation tokens for public lookups.
+          # Scope the dedicated user token to metadata datasources, not PR writes.
           RENOVATE_HOST_RULES: >-
-            [{"hostType":"github-tags","matchHost":"api.github.com","token":"${{ github.token }}"},
-             {"hostType":"github-releases","matchHost":"api.github.com","token":"${{ github.token }}"}]
-          LOG_LEVEL: debug
-          RENOVATE_DRY_RUN: lookup
+            [{"hostType":"github-tags","matchHost":"api.github.com","token":"${{ secrets.RENOVATE_PUBLIC_GITHUB_TOKEN || steps.app-token.outputs.token }}"},
+             {"hostType":"github-releases","matchHost":"api.github.com","token":"${{ secrets.RENOVATE_PUBLIC_GITHUB_TOKEN || steps.app-token.outputs.token }}"}]
+          LOG_LEVEL: info
 
   notify:
     needs: renovate
