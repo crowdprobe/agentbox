@@ -1,6 +1,6 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "description": "Unattended: every update automerges once CI is green. 5-day cool-down on everything except the two agent CLIs.",
+  "description": "Unattended: Renovate merges updates on its next run once CI is green, using the App's review-ruleset exemption. GitHub native auto-merge still requires reviews. 5-day cool-down on everything except the two agent CLIs.",
   "extends": [
     "config:recommended",
     "helpers:pinGitHubActionDigests",
@@ -17,7 +17,7 @@
   "internalChecksFilter": "strict",
   "automerge": true,
   "automergeType": "pr",
-  "platformAutomerge": true,
+  "platformAutomerge": false,
   "rebaseWhen": "behind-base-branch",
   "customManagers": [
     {
