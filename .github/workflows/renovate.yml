@@ -57,7 +57,7 @@ jobs:
           # Aqua's IP allowlist rejects the App token for public metadata lookups.
           # Scope the runner's read-only token to Aqua; keep App auth for writes.
           RENOVATE_HOST_RULES: >-
-            [{"matchHost":"https://api.github.com/repos/aquasecurity/","readOnly":true,"token":"${{ github.token }}"}]
+            [{"hostType":"github","matchHost":"https://api.github.com/repos/aquasecurity/","readOnly":true,"token":"${{ github.token }}"}]
           LOG_LEVEL: debug
           RENOVATE_DRY_RUN: lookup
 
