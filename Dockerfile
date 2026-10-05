@@ -87,7 +87,7 @@ RUN ./openscad.AppImage --appimage-extract >/dev/null \
 
 FROM fetch AS fetch-gh
 # renovate: datasource=github-releases depName=cli/cli
-ARG GH_VERSION=2.101.0
+ARG GH_VERSION=2.102.0
 RUN base="https://github.com/cli/cli/releases/download/v${GH_VERSION}" \
     && fetch_verified "${base}/gh_${GH_VERSION}_linux_amd64.tar.gz" \
          "${base}/gh_${GH_VERSION}_checksums.txt" /tmp/gh.tar.gz \
