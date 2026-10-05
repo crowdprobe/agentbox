@@ -143,7 +143,7 @@ COPY --from=fetch-node /out/node /usr/local
 # renovate: datasource=npm depName=@anthropic-ai/claude-code
 ARG CLAUDE_CODE_VERSION=2.1.289
 # renovate: datasource=npm depName=opencode-ai
-ARG OPENCODE_VERSION=1.18.32
+ARG OPENCODE_VERSION=1.18.34
 # npm verifies each tarball against the sha512 integrity in the registry.
 RUN npm install -g --prefix /opt/agents --no-fund --no-audit \
       "@anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}" \
