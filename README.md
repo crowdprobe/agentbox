@@ -248,7 +248,10 @@ GHCR never expires images on its own, so [`cleanup.yml`](.github/workflows/clean
 03:17 UTC  Renovate (daily) ──► PR per update (after the 5-day cool-down; Claude Code/opencode immediately)
                                  │
                                  ▼
-           ci.yml: lint + build every tier + smoke test ──► automerge when green
+           ci.yml: lint + build every tier + smoke test
+                                 │ successful CI on a same-repository renovate/ branch
+                                 ▼
+           Renovate runs again ──► automerge a green PR; rebase remaining PRs
                                  │
                                  ▼
            build.yml (on merge, and daily at 05:37 UTC) ──► smoke test ──► push :<tier> and :<tier>-YYYYMMDD-HHmmss
@@ -257,6 +260,11 @@ GHCR never expires images on its own, so [`cleanup.yml`](.github/workflows/clean
            failure ──► issue labelled build-failure, assigned ──► GitHub emails the assignee
                        (closed automatically by the next green run)
 ```
+
+Successful CI on Renovate branches triggers another Renovate run, so merges and
+rebases progress without waiting for the next daily run. Runs are serialized;
+each run merges at most one PR into `main`, and CI on rebased PRs continues the
+cycle. Failed CI and fork branches do not trigger dependency processing.
 
 ## Contributing and security
 
