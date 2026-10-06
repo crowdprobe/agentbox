@@ -98,7 +98,7 @@ RUN base="https://github.com/cli/cli/releases/download/v${GH_VERSION}" \
 
 FROM fetch AS fetch-tofu
 # renovate: datasource=github-releases depName=opentofu/opentofu
-ARG OPENTOFU_VERSION=1.12.6
+ARG OPENTOFU_VERSION=1.13.0
 RUN base="https://github.com/opentofu/opentofu/releases/download/v${OPENTOFU_VERSION}" \
     && fetch_verified "${base}/tofu_${OPENTOFU_VERSION}_linux_amd64.tar.gz" \
          "${base}/tofu_${OPENTOFU_VERSION}_SHA256SUMS" /tmp/tofu.tar.gz \
