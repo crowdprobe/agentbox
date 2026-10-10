@@ -1,0 +1,4 @@
+#!/bin/sh
+export LESSCHARSET="${LESSCHARSET:-utf-8}"
+export LESS="${LESS:--R}"
+exec /usr/bin/less "$@"
