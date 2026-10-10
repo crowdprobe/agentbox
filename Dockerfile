@@ -144,7 +144,7 @@ RUN rm -rf /opt/google-cloud-sdk/platform/bundledpythonunix \
 FROM fetch AS agent-clis
 COPY --from=fetch-node /out/node /usr/local
 # renovate: datasource=npm depName=@anthropic-ai/claude-code
-ARG CLAUDE_CODE_VERSION=2.1.295
+ARG CLAUDE_CODE_VERSION=2.1.296
 # renovate: datasource=npm depName=opencode-ai
 ARG OPENCODE_VERSION=1.18.35
 # npm verifies each tarball against the sha512 integrity in the registry.
