@@ -215,12 +215,11 @@ if [[ ${#NAMES[@]} -gt 0 ]]; then
 else
   PROBE="${LITERALS[0]}"
 fi
-if ! curl -s --max-time 10 -o /dev/null "https://${PROBE}" 2>/dev/null; then
-  # Any HTTP answer (even 4xx) proves reachability; only a failed connect is fatal.
-  if ! timeout 5 bash -c "</dev/tcp/${PROBE}/443" 2>/dev/null; then
-    echo "init-firewall: VERIFICATION FAILED - ${PROBE} is NOT reachable." >&2
-    exit 1
-  fi
+# Any HTTP answer (even 4xx) proves reachability; only a failed connect is fatal.
+if ! curl -s --max-time 10 -o /dev/null "https://${PROBE}" 2>/dev/null \
+   && ! timeout 5 bash -c "</dev/tcp/${PROBE}/443" 2>/dev/null; then
+  echo "init-firewall: VERIFICATION FAILED - ${PROBE} is NOT reachable." >&2
+  exit 1
 fi
 
 # Recorded only once proven to work, so a failed run cannot lock the container

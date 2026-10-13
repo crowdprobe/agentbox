@@ -20,16 +20,18 @@ target="${1:?usage: smoke_test.sh <core|cad|ml|infra>}"
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 readme="$here/README.md"
 fail=0
-bad() { echo "FAIL: $*"; fail=1; }
-ok()  { echo "ok:   $*"; }
+bad() { echo "FAIL: $*"; fail=1; return 0; }
+ok()  { echo "ok:   $*"; return 0; }
 
 table_checks() {
+  local section="$1"
   # Print the first-cell backtick contents of every row in the tools:<name> block.
-  awk -v start="<!-- tools:$1 -->" -v stop="<!-- /tools:$1 -->" '
+  awk -v start="<!-- tools:$section -->" -v stop="<!-- /tools:$section -->" '
     index($0, start) {on=1; next}
     index($0, stop)  {on=0}
     on && /^\|/ { if (match($0, /^\|[ ]*`[^`]+`/)) { s=substr($0, RSTART, RLENGTH); sub(/^\|[ ]*`/, "", s); sub(/`$/, "", s); print s } }
   ' "$readme"
+  return $?
 }
 
 sections=(core)
@@ -52,9 +54,9 @@ for s in "${sections[@]}"; do
 done
 
 # expect <description> <command...>: the command must succeed.
-expect() { local d="$1"; shift; if "$@" >/dev/null 2>&1; then ok "$d"; else bad "$d"; fi; }
+expect() { local d="$1"; shift; if "$@" >/dev/null 2>&1; then ok "$d"; else bad "$d"; fi; return $?; }
 # refuse <description> <command...>: the command must FAIL.
-refuse() { local d="$1"; shift; if "$@" >/dev/null 2>&1; then bad "$d"; else ok "$d"; fi; }
+refuse() { local d="$1"; shift; if "$@" >/dev/null 2>&1; then bad "$d"; else ok "$d"; fi; return $?; }
 
 # Tools must actually run, not just exist.
 expect "claude runs" claude --version
