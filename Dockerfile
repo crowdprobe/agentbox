@@ -148,9 +148,14 @@ ARG CLAUDE_CODE_VERSION=2.1.296
 # renovate: datasource=npm depName=opencode-ai
 ARG OPENCODE_VERSION=1.19.0
 # npm verifies each tarball against the sha512 integrity in the registry.
-RUN npm install -g --prefix /opt/agents --no-fund --no-audit \
+# Lifecycle scripts normally copy native binaries into the wrapper packages.
+# Skip those scripts and link the Linux x64/glibc binaries explicitly instead.
+# OpenCode's baseline build also works on CPUs without AVX2.
+RUN npm install -g --prefix /opt/agents --no-fund --no-audit --ignore-scripts \
       "@anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}" \
       "opencode-ai@${OPENCODE_VERSION}" \
+    && ln -sf /opt/agents/lib/node_modules/@anthropic-ai/claude-code/node_modules/@anthropic-ai/claude-code-linux-x64/claude /opt/agents/bin/claude \
+    && ln -sf /opt/agents/lib/node_modules/opencode-ai/node_modules/opencode-linux-x64-baseline/bin/opencode /opt/agents/bin/opencode \
     && /opt/agents/bin/claude --version \
     && /opt/agents/bin/opencode --version \
     && rm -rf /root/.npm
