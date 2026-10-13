@@ -61,12 +61,14 @@ expect "claude runs" claude --version
 expect "opencode runs" opencode --version
 expect "gh runs" gh --version
 case "$target" in
+  core)  : ;;
   cad)   expect "openscad-nightly runs" openscad-nightly --version ;;
   ml)    expect "gcloud runs" gcloud version
          expect "arduino:avr core installed" bash -c "arduino-cli core list | grep -q '^arduino:avr'"
          expect "AccelStepper installed" bash -c "arduino-cli lib list | grep -q '^AccelStepper'" ;;
   infra) expect "gcloud runs" gcloud version
          expect "tofu runs" tofu version ;;
+  *)     bad "unsupported target: $target" ;;
 esac
 
 # --- security properties -----------------------------------------------------
@@ -118,10 +120,12 @@ echo
 echo "--- versions ($target) ---"
 node --version; claude --version; opencode --version; uv --version; git --version | head -1; gh --version | head -1
 case "$target" in
+  core)  : ;;
   cad)   openscad-nightly --version 2>&1 | head -1; python3 -c 'import trimesh; print("trimesh", trimesh.__version__)' ;;
   ml)    gcloud version 2>/dev/null | head -1; arduino-cli version
          python3 -c 'import cv2, imagehash, numpy, onnxruntime; print("opencv", cv2.__version__, "imagehash", imagehash.__version__, "numpy", numpy.__version__, "onnxruntime", onnxruntime.__version__)' ;;
   infra) gcloud version 2>/dev/null | head -1; tofu version | head -1 ;;
+  *)     bad "unsupported target: $target" ;;
 esac
 
 if [[ $fail -ne 0 ]]; then
