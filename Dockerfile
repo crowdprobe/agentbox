@@ -40,9 +40,24 @@ ARG DEBIAN_FRONTEND=noninteractive
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-         ca-certificates curl git jq make ripgrep bc less procps openssl \
+         bc \
+         bind9-dnsutils \
+         ca-certificates \
+         curl \
+         dnsmasq-base \
+         git \
+         iproute2 \
+         ipset \
+         iptables \
+         iputils-ping \
+         jq \
+         less \
+         make \
+         openssl \
+         procps \
          python3 \
-         iptables ipset dnsmasq-base iproute2 bind9-dnsutils sudo iputils-ping \
+         ripgrep \
+         sudo \
     && rm -rf /var/lib/apt/lists/*
 
 # =============================================================================
@@ -240,9 +255,23 @@ FROM core AS cad
 USER 0
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-         libglu1-mesa libgl1 libegl1 libxi6 libxrender1 libxcursor1 libxrandr2 \
-         libxinerama1 libfontconfig1 libharfbuzz0b libdouble-conversion3 \
-         libxkbcommon0 libgpg-error0 libasound2t64 xvfb xauth imagemagick \
+         imagemagick \
+         libasound2t64 \
+         libdouble-conversion3 \
+         libegl1 \
+         libfontconfig1 \
+         libgl1 \
+         libglu1-mesa \
+         libgpg-error0 \
+         libharfbuzz0b \
+         libxcursor1 \
+         libxi6 \
+         libxinerama1 \
+         libxkbcommon0 \
+         libxrandr2 \
+         libxrender1 \
+         xauth \
+         xvfb \
     && rm -rf /var/lib/apt/lists/*
 COPY --from=fetch-openscad /out-openscad /opt/openscad-nightly
 COPY --from=venv-cad /opt/venv /opt/venv
@@ -263,8 +292,14 @@ FROM core AS ml
 USER 0
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-         openssh-client rsync imagemagick poppler-utils \
-         g++ gcc-avr avr-libc arduino-core-avr \
+         arduino-core-avr \
+         avr-libc \
+         g++ \
+         gcc-avr \
+         imagemagick \
+         openssh-client \
+         poppler-utils \
+         rsync \
     && rm -rf /var/lib/apt/lists/*
 COPY --from=venv-ml /opt/venv /opt/venv
 COPY --from=fetch-gcloud /opt/google-cloud-sdk /opt/google-cloud-sdk
