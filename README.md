@@ -153,8 +153,8 @@ RTK is available in every tier. OpenAI, Gemini and other models work through
 OpenCode's existing providers; RTK needs no model credentials or proxy.
 Initialize the integration in a **writable** user configuration directory with
 `rtk init -g --opencode --no-patch --no-trust-filters`, then restart OpenCode.
-Do not run this against a read-only plugin bind mount: projects such as RoboMaid
-instead supply their reviewed, dependency-free plugin and initialize RTK's
+Do not run this against a read-only plugin bind mount: projects can instead
+supply their reviewed, dependency-free plugin and initialize RTK's
 configuration during container startup. Avoid installing a second global
 plugin alongside a project integration. RTK telemetry is off by default.
 No hooks or user settings are baked into the image, since runtime mounts can
