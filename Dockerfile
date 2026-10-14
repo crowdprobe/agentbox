@@ -120,6 +120,20 @@ RUN base="https://github.com/opentofu/opentofu/releases/download/v${OPENTOFU_VER
     && mkdir -p /out && tar -xzf /tmp/tofu.tar.gz -C /out tofu \
     && rm /tmp/tofu.tar.gz
 
+FROM fetch AS fetch-rtk
+# Initial reviewed pin for OpenCode integration and stdin filtering. Subsequent
+# updates retain Renovate's normal five-day minimumReleaseAge.
+# renovate: datasource=github-releases depName=rtk-ai/rtk
+ARG RTK_VERSION=1.0.0
+RUN base="https://github.com/rtk-ai/rtk/releases/download/v${RTK_VERSION}" \
+    && fetch_verified "${base}/rtk-x86_64-unknown-linux-musl.tar.gz" \
+         "${base}/checksums.txt" /tmp/rtk.tar.gz \
+    && mkdir -p /out && tar -xzf /tmp/rtk.tar.gz -C /out rtk \
+    && /out/rtk --version \
+    && /out/rtk hook opencode --help >/dev/null \
+    && /out/rtk pipe --help >/dev/null \
+    && rm /tmp/rtk.tar.gz
+
 FROM fetch AS fetch-arduino
 # renovate: datasource=github-releases depName=arduino/arduino-cli
 ARG ARDUINO_CLI_VERSION=1.5.1
@@ -210,6 +224,7 @@ COPY --from=fetch-node /out/node/bin/node /usr/local/bin/node
 COPY --from=agent-clis /opt/agents /opt/agents
 COPY --from=uv /uv /usr/local/bin/uv
 COPY --from=fetch-gh /out/gh /opt/gh
+COPY --from=fetch-rtk /out/rtk /usr/local/bin/rtk
 COPY --chmod=0755 rootfs/usr/local/bin/ /usr/local/bin/
 
 # The agent CLIs must not update themselves: that is a guaranteed-failing
@@ -247,6 +262,10 @@ LABEL org.opencontainers.image.source="https://github.com/crowdprobe/agentbox" \
 
 USER ${USER_UID}:${USER_GID}
 WORKDIR /workspace
+# Preinitialize the default user's hooks/plugin in every tier. Repeat at
+# startup because bind mounts and named volumes can hide these image files.
+RUN /usr/local/bin/agentbox-init-rtk.sh
+ENTRYPOINT ["/usr/local/bin/agentbox-entrypoint.sh"]
 
 # =============================================================================
 # cad

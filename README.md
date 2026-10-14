@@ -42,6 +42,7 @@ and CI fails if a listed tool is missing.
 |---|---|---|
 | `claude` | Claude Code CLI | npm, exact version, registry sha512 integrity |
 | `opencode` | opencode CLI | npm, exact version, registry sha512 integrity |
+| `rtk` | RTK command-output compression (not a model provider) | GitHub release checked against `checksums.txt` |
 | `node` | Node.js LTS runtime for the CLIs (**npm is not included**) | nodejs.org tarball checked against `SHASUMS256.txt` |
 | `uv` | Python package and venv manager | `ghcr.io/astral-sh/uv` image |
 | `python3` | Debian's Python 3 | Debian trixie |
@@ -145,6 +146,25 @@ As a devcontainer (`.devcontainer/devcontainer.json`):
 ```
 
 Pass credentials at run time through bind mounts or environment variables. The images never contain any.
+
+### RTK initialization
+
+RTK is available in every tier. OpenAI, Gemini and other models work through
+OpenCode's existing providers; RTK needs no model credentials or proxy.
+Every tier runs `rtk init --global --opencode --auto-patch --no-trust-filters`
+as its non-root user during image construction and again at container startup.
+This registers Claude Code's Bash hook and OpenCode's native plugin before the
+requested command runs, including when writable configuration volumes hide
+the image's preinitialized files. Telemetry is disabled; custom filters are not
+automatically trusted. Repeated initialization preserves unrelated settings.
+
+Configuration mounts must be writable. Projects supplying their own reviewed
+RTK integration or read-only configuration should set `RTK_AUTO_INIT=0` and
+handle initialization themselves to avoid duplicate plugins. Overriding the
+image entrypoint also skips startup initialization; invoke
+`/usr/local/bin/agentbox-init-rtk.sh` after mounting user configuration in that
+case. Restart already-running agent CLIs after reinitialization.
+
 For GitHub, mount a GitHub App instead of a personal token; see [GitHub access](#github-access-as-a-github-app).
 Running the container as `root` (for example with `remoteUser: root`) works, but it is not recommended.
 The `agent` user is the default for a reason.
