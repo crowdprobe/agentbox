@@ -42,6 +42,7 @@ and CI fails if a listed tool is missing.
 |---|---|---|
 | `claude` | Claude Code CLI | npm, exact version, registry sha512 integrity |
 | `opencode` | opencode CLI | npm, exact version, registry sha512 integrity |
+| `rtk` | RTK command-output compression (not a model provider) | GitHub release checked against `checksums.txt` |
 | `node` | Node.js LTS runtime for the CLIs (**npm is not included**) | nodejs.org tarball checked against `SHASUMS256.txt` |
 | `uv` | Python package and venv manager | `ghcr.io/astral-sh/uv` image |
 | `python3` | Debian's Python 3 | Debian trixie |
@@ -145,6 +146,19 @@ As a devcontainer (`.devcontainer/devcontainer.json`):
 ```
 
 Pass credentials at run time through bind mounts or environment variables. The images never contain any.
+
+### RTK initialization
+
+RTK is available in every tier. OpenAI, Gemini and other models work through
+OpenCode's existing providers; RTK needs no model credentials or proxy.
+Initialize the integration in a **writable** user configuration directory with
+`rtk init -g --opencode --no-patch --no-trust-filters`, then restart OpenCode.
+Do not run this against a read-only plugin bind mount: projects such as RoboMaid
+instead supply their reviewed, dependency-free plugin and initialize RTK's
+configuration during container startup. Avoid installing a second global
+plugin alongside a project integration. RTK telemetry is off by default.
+No hooks or user settings are baked into the image, since runtime mounts can
+hide them and each project owns its safety and raw-output requirements.
 For GitHub, mount a GitHub App instead of a personal token; see [GitHub access](#github-access-as-a-github-app).
 Running the container as `root` (for example with `remoteUser: root`) works, but it is not recommended.
 The `agent` user is the default for a reason.
