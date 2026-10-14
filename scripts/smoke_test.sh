@@ -64,6 +64,19 @@ expect "opencode runs" opencode --version
 expect "rtk runs" rtk --version
 expect "rtk supports permission-aware OpenCode hooks" rtk hook opencode --help
 expect "rtk supports output-only stdin filtering" rtk pipe --help
+# Verify actual initialization, not just the executable's presence. This runs
+# for every tier; startup must have installed both integrations before tests.
+expect "RTK OpenCode plugin initialized" test -s "$HOME/.config/opencode/plugins/rtk.ts"
+expect "RTK Claude awareness initialized" test -s "$HOME/.claude/RTK.md"
+expect "RTK Claude Bash hook registered" python3 -c '
+import json, pathlib
+settings = json.loads((pathlib.Path.home() / ".claude/settings.json").read_text())
+assert any(h.get("command") == "rtk hook claude"
+           for entry in settings.get("hooks", {}).get("PreToolUse", [])
+           if entry.get("matcher") == "Bash"
+           for h in entry.get("hooks", []))
+'
+expect "RTK initialization can be repeated" /usr/local/bin/agentbox-init-rtk.sh
 expect "gh runs" gh --version
 case "$target" in
   core)  : ;;

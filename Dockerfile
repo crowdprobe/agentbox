@@ -262,6 +262,10 @@ LABEL org.opencontainers.image.source="https://github.com/crowdprobe/agentbox" \
 
 USER ${USER_UID}:${USER_GID}
 WORKDIR /workspace
+# Preinitialize the default user's hooks/plugin in every tier. Repeat at
+# startup because bind mounts and named volumes can hide these image files.
+RUN /usr/local/bin/agentbox-init-rtk.sh
+ENTRYPOINT ["/usr/local/bin/agentbox-entrypoint.sh"]
 
 # =============================================================================
 # cad

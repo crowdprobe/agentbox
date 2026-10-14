@@ -151,14 +151,20 @@ Pass credentials at run time through bind mounts or environment variables. The i
 
 RTK is available in every tier. OpenAI, Gemini and other models work through
 OpenCode's existing providers; RTK needs no model credentials or proxy.
-Initialize the integration in a **writable** user configuration directory with
-`rtk init -g --opencode --no-patch --no-trust-filters`, then restart OpenCode.
-Do not run this against a read-only plugin bind mount: projects can instead
-supply their reviewed, dependency-free plugin and initialize RTK's
-configuration during container startup. Avoid installing a second global
-plugin alongside a project integration. RTK telemetry is off by default.
-No hooks or user settings are baked into the image, since runtime mounts can
-hide them and each project owns its safety and raw-output requirements.
+Every tier runs `rtk init --global --opencode --auto-patch --no-trust-filters`
+as its non-root user during image construction and again at container startup.
+This registers Claude Code's Bash hook and OpenCode's native plugin before the
+requested command runs, including when writable configuration volumes hide
+the image's preinitialized files. Telemetry is disabled; custom filters are not
+automatically trusted. Repeated initialization preserves unrelated settings.
+
+Configuration mounts must be writable. Projects supplying their own reviewed
+RTK integration or read-only configuration should set `RTK_AUTO_INIT=0` and
+handle initialization themselves to avoid duplicate plugins. Overriding the
+image entrypoint also skips startup initialization; invoke
+`/usr/local/bin/agentbox-init-rtk.sh` after mounting user configuration in that
+case. Restart already-running agent CLIs after reinitialization.
+
 For GitHub, mount a GitHub App instead of a personal token; see [GitHub access](#github-access-as-a-github-app).
 Running the container as `root` (for example with `remoteUser: root`) works, but it is not recommended.
 The `agent` user is the default for a reason.
