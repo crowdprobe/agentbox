@@ -78,6 +78,7 @@ assert any(h.get("command") == "rtk hook claude"
 '
 expect "RTK initialization can be repeated" /usr/local/bin/agentbox-init-rtk.sh
 expect "gh runs" gh --version
+expect "glab runs without authentication" glab --version
 case "$target" in
   core)  : ;;
   cad)   expect "openscad-nightly runs" openscad-nightly --version ;;
@@ -91,7 +92,7 @@ esac
 
 # --- security properties -----------------------------------------------------
 refuse "default user is non-root ($(id -un))" test "$(id -u)" -eq 0
-for absent in npm npx corepack copilot copilot-real wget; do
+for absent in npm npx corepack copilot copilot-real wget docker dockerd containerd runc cosign; do
   refuse "no $absent in the image" command -v "$absent"
 done
 for mod in ultralytics torch; do
@@ -137,6 +138,7 @@ fi
 echo
 echo "--- versions ($target) ---"
 node --version; claude --version; opencode --version; rtk --version; uv --version; git --version | head -1; gh --version | head -1
+glab --version
 case "$target" in
   core)  : ;;
   cad)   openscad-nightly --version 2>&1 | head -1; python3 -c 'import trimesh; print("trimesh", trimesh.__version__)' ;;
