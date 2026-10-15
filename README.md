@@ -48,6 +48,7 @@ and CI fails if a listed tool is missing.
 | `python3` | Debian's Python 3 | Debian trixie |
 | `git` | git | Debian trixie |
 | `gh` | GitHub CLI (PRs, CI status, reviews), authenticated as the mounted GitHub App | GitHub release checked against `checksums.txt` |
+| `glab` | GitLab CLI (merge requests, CI status, reviews); callers supply authentication at runtime | Debian trixie (signed repositories) |
 | `curl` | curl | Debian trixie |
 | `jq` | jq | Debian trixie |
 | `rg` | ripgrep | Debian trixie |
@@ -120,7 +121,14 @@ Training is expected to run on cloud GPUs; ONNX models run on the CPU, through O
 - PyTorch and ultralytics
 - wget
 - build-time download tools (xz, unzip)
+- Docker CLI, Docker daemon, containerd and runc (host runtime tooling, not tier tooling)
+- cosign (optional host-side verifier; `gh attestation verify` is already available)
 - any credential, allowlist or project-specific setting
+
+Docker builds, image pulls and live rootless/runtime checks run on the host.
+Installing `runc` inside a tier would inspect an unrelated binary, not the
+runtime that isolates that tier. Do not mount a Docker socket or add a nested
+daemon just to make those checks run inside an agent container.
 
 ## Usage
 
@@ -146,6 +154,17 @@ As a devcontainer (`.devcontainer/devcontainer.json`):
 ```
 
 Pass credentials at run time through bind mounts or environment variables. The images never contain any.
+
+### GitLab access
+
+`glab` is installed at build time in **core**, so it is available in every
+tier. It does not configure an account, mint a token, or inherit the GitHub
+App identity. Callers provide their own scoped GitLab authentication and
+allowlist `gitlab.com` (or their self-hosted GitLab hostname) at runtime.
+Projects with an approved credential wrapper should invoke `glab` through
+that wrapper rather than persisting another login inside the container.
+Never bake project credentials or credential-store paths into these public
+images, or install a missing CLI in a running tier.
 
 ### RTK initialization
 

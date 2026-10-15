@@ -46,6 +46,7 @@ RUN apt-get update \
          curl \
          dnsmasq-base \
          git \
+         glab \
          iproute2 \
          ipset \
          iptables \
