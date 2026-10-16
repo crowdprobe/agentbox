@@ -176,7 +176,7 @@ COPY --from=fetch-node /out/node /usr/local
 # renovate: datasource=npm depName=@anthropic-ai/claude-code
 ARG CLAUDE_CODE_VERSION=2.1.301
 # renovate: datasource=npm depName=opencode-ai
-ARG OPENCODE_VERSION=1.19.0
+ARG OPENCODE_VERSION=1.19.2
 # npm verifies each tarball against the sha512 integrity in the registry.
 # Lifecycle scripts normally copy native binaries into the wrapper packages.
 # Skip those scripts and link the Linux x64/glibc binaries explicitly instead.
