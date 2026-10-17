@@ -149,7 +149,7 @@ ENV ARDUINO_DIRECTORIES_DATA=/opt/arduino/data \
     ARDUINO_DIRECTORIES_DOWNLOADS=/tmp/arduino-downloads
 RUN base="https://github.com/arduino/arduino-cli/releases/download/v${ARDUINO_CLI_VERSION}" \
     && fetch_verified "${base}/arduino-cli_${ARDUINO_CLI_VERSION}_Linux_64bit.tar.gz" \
-         "${base}/${ARDUINO_CLI_VERSION}_checksums.txt" /tmp/arduino-cli.tar.gz \
+         "${base}/${ARDUINO_CLI_VERSION}-checksums.txt" /tmp/arduino-cli.tar.gz \
     && mkdir -p /out && tar -xzf /tmp/arduino-cli.tar.gz -C /out arduino-cli \
     && rm /tmp/arduino-cli.tar.gz \
     && /out/arduino-cli core update-index \
@@ -198,12 +198,11 @@ COPY --from=uv /uv /usr/local/bin/uv
 ENV UV_NO_CACHE=1 UV_PYTHON_DOWNLOADS=never UV_LINK_MODE=copy
 
 FROM venv-build AS venv-cad
-COPY python/cad/requirements.txt python/cad/check.py /tmp/
+COPY python/cad/requirements.txt /tmp/requirements.txt
 RUN uv venv /opt/venv \
     && uv pip install --python /opt/venv/bin/python \
          --exclude-newer "$(date -u -d '5 days ago' +%Y-%m-%dT%H:%M:%SZ)" \
-         -r /tmp/requirements.txt \
-    && /opt/venv/bin/python /tmp/check.py
+         -r /tmp/requirements.txt
 
 FROM venv-build AS venv-ml
 COPY python/ml/requirements.txt /tmp/requirements.txt
@@ -296,12 +295,15 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 COPY --from=fetch-openscad /out-openscad /opt/openscad-nightly
 COPY --from=venv-cad /opt/venv /opt/venv
+COPY python/cad/check.py /tmp/cad-check.py
 # A wrapper, not a symlink: AppRun locates its hooks via `dirname "$0"`.
 RUN printf '#!/bin/sh\nexec /opt/openscad-nightly/AppRun "$@"\n' > /usr/local/bin/openscad-nightly \
     && chmod 0755 /usr/local/bin/openscad-nightly \
     && ln -s /usr/local/bin/openscad-nightly /usr/local/bin/openscad \
     && mkdir -p /home/agent/.config/OpenSCAD && chown -R agent:agent /home/agent/.config \
-    && blender --background --version
+    && blender --background --version \
+    && /opt/venv/bin/python /tmp/cad-check.py \
+    && rm /tmp/cad-check.py
 ENV PATH="/opt/venv/bin:${PATH}" \
     OPENSCAD=/usr/local/bin/openscad-nightly
 LABEL org.opencontainers.image.description="agentbox cad: core + Blender + OpenSCAD nightly + shared CAD Python stack"
