@@ -7,7 +7,7 @@ cadquery==2.8.0
 cadquery-massembly==1.0.0
 manifold3d==3.5.4
 networkx==3.7
-numpy==2.5.3
+numpy==2.5.4
 rtree==1.4.1
 scipy==1.18.1
 trimesh==5.1.1
