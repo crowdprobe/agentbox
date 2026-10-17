@@ -4,7 +4,7 @@
 #
 # One multistage Dockerfile, four published targets:
 #   core   agent CLIs, git, the egress firewall - what every tier needs
-#   cad    core + OpenSCAD (nightly) + trimesh
+#   cad    core + Blender + OpenSCAD (nightly) + shared CAD Python stack
 #   ml     core + OpenCV/imagehash/onnxruntime + gcloud + image/PDF tools + AVR toolchain
 #   infra  core + gcloud + OpenTofu
 #
@@ -202,8 +202,7 @@ COPY python/cad/requirements.txt /tmp/requirements.txt
 RUN uv venv /opt/venv \
     && uv pip install --python /opt/venv/bin/python \
          --exclude-newer "$(date -u -d '5 days ago' +%Y-%m-%dT%H:%M:%SZ)" \
-         -r /tmp/requirements.txt \
-    && /opt/venv/bin/python -c "import trimesh; print('cad venv OK')"
+         -r /tmp/requirements.txt
 
 FROM venv-build AS venv-ml
 COPY python/ml/requirements.txt /tmp/requirements.txt
@@ -275,6 +274,7 @@ FROM core AS cad
 USER 0
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
+         blender \
          imagemagick \
          libasound2t64 \
          libdouble-conversion3 \
@@ -295,14 +295,18 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 COPY --from=fetch-openscad /out-openscad /opt/openscad-nightly
 COPY --from=venv-cad /opt/venv /opt/venv
+COPY python/cad/check.py /tmp/cad-check.py
 # A wrapper, not a symlink: AppRun locates its hooks via `dirname "$0"`.
 RUN printf '#!/bin/sh\nexec /opt/openscad-nightly/AppRun "$@"\n' > /usr/local/bin/openscad-nightly \
     && chmod 0755 /usr/local/bin/openscad-nightly \
     && ln -s /usr/local/bin/openscad-nightly /usr/local/bin/openscad \
-    && mkdir -p /home/agent/.config/OpenSCAD && chown -R agent:agent /home/agent/.config
+    && mkdir -p /home/agent/.config/OpenSCAD && chown -R agent:agent /home/agent/.config \
+    && blender --background --version \
+    && /opt/venv/bin/python /tmp/cad-check.py \
+    && rm /tmp/cad-check.py
 ENV PATH="/opt/venv/bin:${PATH}" \
     OPENSCAD=/usr/local/bin/openscad-nightly
-LABEL org.opencontainers.image.description="agentbox cad: core + OpenSCAD nightly + trimesh"
+LABEL org.opencontainers.image.description="agentbox cad: core + Blender + OpenSCAD nightly + shared CAD Python stack"
 USER 1000:1000
 
 # =============================================================================
