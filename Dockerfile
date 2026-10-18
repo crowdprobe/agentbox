@@ -45,6 +45,7 @@ RUN apt-get update \
          ca-certificates \
          curl \
          dnsmasq-base \
+         file \
          git \
          glab \
          iproute2 \
