@@ -23,6 +23,10 @@
 # --- pinned versions (Renovate-managed) --------------------------------------
 ARG BASE_IMAGE=debian:trixie-slim
 
+# Shared by the installer and runtime metadata; keep a single version pin.
+# renovate: datasource=npm depName=opencode-ai
+ARG OPENCODE_VERSION=1.19.3
+
 # renovate: datasource=github-releases depName=astral-sh/uv
 ARG UV_VERSION=0.13.1
 # renovate: datasource=docker depName=google/cloud-sdk versioning=regex:^(?<major>\d+)\.(?<minor>\d+)\.(?<patch>\d+)$
@@ -176,8 +180,7 @@ FROM fetch AS agent-clis
 COPY --from=fetch-node /out/node /usr/local
 # renovate: datasource=npm depName=@anthropic-ai/claude-code
 ARG CLAUDE_CODE_VERSION=2.1.304
-# renovate: datasource=npm depName=opencode-ai
-ARG OPENCODE_VERSION=1.19.3
+ARG OPENCODE_VERSION
 # npm verifies each tarball against the sha512 integrity in the registry.
 # Lifecycle scripts normally copy native binaries into the wrapper packages.
 # Skip those scripts and link the Linux x64/glibc binaries explicitly instead.
@@ -217,6 +220,8 @@ RUN uv venv /opt/venv \
 # core
 # =============================================================================
 FROM base AS core
+ARG OPENCODE_VERSION
+ENV OPENCODE_VERSION=${OPENCODE_VERSION}
 ARG AGENT_NAME=agent
 ARG USER_UID=1000
 ARG USER_GID=1000

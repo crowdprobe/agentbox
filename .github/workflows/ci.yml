@@ -33,6 +33,9 @@ jobs:
             fi
           done
 
+      - name: OpenCode runtime version contract regression tests
+        run: python3 -m unittest discover -s tests -v
+
       - name: hadolint
         uses: hadolint/hadolint-action@06be81baf89a55ffd0e24b8f04a4185738dd3387 # v3.5.0
         with:
