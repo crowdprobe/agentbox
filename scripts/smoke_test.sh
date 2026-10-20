@@ -60,7 +60,7 @@ refuse() { local d="$1"; shift; if "$@" >/dev/null 2>&1; then bad "$d"; else ok 
 
 # Tools must actually run, not just exist.
 expect "claude runs" claude --version
-expect "opencode runs" opencode --version
+expect "OpenCode runtime version matches its exported pin" bash "$here/scripts/check_opencode_version.sh"
 expect "rtk runs" rtk --version
 expect "rtk supports permission-aware OpenCode hooks" rtk hook opencode --help
 expect "rtk supports output-only stdin filtering" rtk pipe --help

@@ -155,6 +155,20 @@ As a devcontainer (`.devcontainer/devcontainer.json`):
 
 Pass credentials at run time through bind mounts or environment variables. The images never contain any.
 
+### Downstream OpenCode version contract
+
+Every tier exports `OPENCODE_VERSION` as the installed OpenCode version in
+`major.minor.patch` form (without a `v` prefix). A single Renovate-managed global
+Dockerfile argument supplies both the npm installation and the `core` environment;
+`cad`, `ml` and `infra` inherit it. Image smoke tests require the metadata to be
+valid and exactly match a successful `opencode --version` invocation.
+
+Downstream images should inherit this metadata rather than maintain another
+OpenCode version pin. Pin the base image by immutable digest and fail on missing
+or inconsistent metadata. For older images without the export, rebuild and
+publish Agentbox first, verify the published image, then update the downstream
+base-image digest through review.
+
 ### GitLab access
 
 `glab` is installed at build time in **core**, so it is available in every
