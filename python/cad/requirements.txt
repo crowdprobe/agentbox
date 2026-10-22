@@ -2,7 +2,7 @@
 # Renovate after the 5-day cool-down. Transitive dependencies are resolved at
 # build time with `uv pip install --exclude-newer <5 days ago>`, so they get
 # the same cool-down; uv verifies every wheel against PyPI's published hash.
-Pillow==12.3.0
+Pillow==13.0.0
 cadquery==2.8.0
 cadquery-massembly==1.1.0
 manifold3d==3.5.4
