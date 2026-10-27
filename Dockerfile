@@ -179,7 +179,7 @@ RUN rm -rf /opt/google-cloud-sdk/platform/bundledpythonunix \
 FROM fetch AS agent-clis
 COPY --from=fetch-node /out/node /usr/local
 # renovate: datasource=npm depName=@anthropic-ai/claude-code
-ARG CLAUDE_CODE_VERSION=2.1.310
+ARG CLAUDE_CODE_VERSION=2.1.311
 ARG OPENCODE_VERSION
 # npm verifies each tarball against the sha512 integrity in the registry.
 # Lifecycle scripts normally copy native binaries into the wrapper packages.
