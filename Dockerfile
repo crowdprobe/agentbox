@@ -130,7 +130,7 @@ FROM fetch AS fetch-rtk
 # Initial reviewed pin for OpenCode integration and stdin filtering. Subsequent
 # updates retain Renovate's normal five-day minimumReleaseAge.
 # renovate: datasource=github-releases depName=rtk-ai/rtk
-ARG RTK_VERSION=1.0.1
+ARG RTK_VERSION=1.1.0
 RUN base="https://github.com/rtk-ai/rtk/releases/download/v${RTK_VERSION}" \
     && fetch_verified "${base}/rtk-x86_64-unknown-linux-musl.tar.gz" \
          "${base}/checksums.txt" /tmp/rtk.tar.gz \
