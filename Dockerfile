@@ -142,7 +142,7 @@ RUN base="https://github.com/rtk-ai/rtk/releases/download/v${RTK_VERSION}" \
 
 FROM fetch AS fetch-arduino
 # renovate: datasource=github-releases depName=arduino/arduino-cli
-ARG ARDUINO_CLI_VERSION=1.5.1
+ARG ARDUINO_CLI_VERSION=1.6.0
 # arduino-cli verifies each core/library archive against the checksum in
 # Arduino's own index, for exactly the versions pinned here.
 # renovate: datasource=github-tags depName=arduino/ArduinoCore-avr
