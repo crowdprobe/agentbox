@@ -25,7 +25,7 @@ ARG BASE_IMAGE=debian:trixie-slim
 
 # Shared by the installer and runtime metadata; keep a single version pin.
 # renovate: datasource=npm depName=opencode-ai
-ARG OPENCODE_VERSION=1.19.5
+ARG OPENCODE_VERSION=1.19.6
 
 # renovate: datasource=github-releases depName=astral-sh/uv
 ARG UV_VERSION=0.13.7
