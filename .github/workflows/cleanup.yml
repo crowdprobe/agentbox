@@ -49,7 +49,7 @@ jobs:
       DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry-run || false }}
     steps:
       - name: core - dated builds older than 90 days
-        uses: dataaxiom/ghcr-cleanup-action@d52806a0dc70b430571a37da1fde39733ffd640f # v1.2.2
+        uses: dataaxiom/ghcr-cleanup-action@ac45a8c04b1eb4b27974ca79a0a74f344c93664b # v1.3.0
         with:
           package: agentbox
           delete-tags: 'core-2*'   # dated builds only: core-YYYYMMDD[-HHmmss]
@@ -58,7 +58,7 @@ jobs:
           dry-run: ${{ env.DRY_RUN }}
 
       - name: cad - dated builds older than 90 days
-        uses: dataaxiom/ghcr-cleanup-action@d52806a0dc70b430571a37da1fde39733ffd640f # v1.2.2
+        uses: dataaxiom/ghcr-cleanup-action@ac45a8c04b1eb4b27974ca79a0a74f344c93664b # v1.3.0
         with:
           package: agentbox
           delete-tags: 'cad-2*'   # dated builds only: cad-YYYYMMDD[-HHmmss]
@@ -67,7 +67,7 @@ jobs:
           dry-run: ${{ env.DRY_RUN }}
 
       - name: ml - dated builds older than 90 days
-        uses: dataaxiom/ghcr-cleanup-action@d52806a0dc70b430571a37da1fde39733ffd640f # v1.2.2
+        uses: dataaxiom/ghcr-cleanup-action@ac45a8c04b1eb4b27974ca79a0a74f344c93664b # v1.3.0
         with:
           package: agentbox
           delete-tags: 'ml-2*'   # dated builds only: ml-YYYYMMDD[-HHmmss]
@@ -76,7 +76,7 @@ jobs:
           dry-run: ${{ env.DRY_RUN }}
 
       - name: infra - dated builds older than 90 days
-        uses: dataaxiom/ghcr-cleanup-action@d52806a0dc70b430571a37da1fde39733ffd640f # v1.2.2
+        uses: dataaxiom/ghcr-cleanup-action@ac45a8c04b1eb4b27974ca79a0a74f344c93664b # v1.3.0
         with:
           package: agentbox
           delete-tags: 'infra-2*'   # dated builds only: infra-YYYYMMDD[-HHmmss]
@@ -85,7 +85,7 @@ jobs:
           dry-run: ${{ env.DRY_RUN }}
 
       - name: untagged + orphaned signatures/attestations (any age)
-        uses: dataaxiom/ghcr-cleanup-action@d52806a0dc70b430571a37da1fde39733ffd640f # v1.2.2
+        uses: dataaxiom/ghcr-cleanup-action@ac45a8c04b1eb4b27974ca79a0a74f344c93664b # v1.3.0
         with:
           package: agentbox
           delete-untagged: true
